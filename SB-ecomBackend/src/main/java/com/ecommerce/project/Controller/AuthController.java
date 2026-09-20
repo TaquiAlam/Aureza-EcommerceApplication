@@ -82,8 +82,10 @@ public class AuthController {
                 .map(item -> item.getAuthority())
                 .collect(Collectors.toList());
 
+        String jwtToken = jwtUtils.generateTokenFromUsername(userDetails.getUsername());
+
         UserLoginResponse response = new UserLoginResponse(userDetails.getId(),
-                userDetails.getUsername(), roles);
+                userDetails.getUsername(), roles, jwtToken);
 
         return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, JWTcookie.toString()).body(response);
     }
@@ -153,8 +155,10 @@ public class AuthController {
                 .map(item -> item.getAuthority())
                 .collect(Collectors.toList());
 
+        String jwtToken = jwtUtils.generateTokenFromUsername(userDetails.getUsername());
+
         UserLoginResponse response = new UserLoginResponse(userDetails.getId(),
-                userDetails.getUsername(), roles);
+                userDetails.getUsername(), roles, jwtToken);
 
         return ResponseEntity.ok().body(response);
     }

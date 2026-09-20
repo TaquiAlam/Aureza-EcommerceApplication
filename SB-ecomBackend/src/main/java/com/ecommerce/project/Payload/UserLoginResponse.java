@@ -8,11 +8,15 @@ public class UserLoginResponse {
     private String username;
     private List<String> roles;
 
-    public UserLoginResponse(Long id, String username, List<String> roles) {
+    public UserLoginResponse(Long id, String username, List<String> roles, String jwtToken) {
         this.id = id;
         this.username = username;
         this.roles = roles;
         this.jwtToken = jwtToken;
+    }
+
+    public UserLoginResponse(Long id, String username, List<String> roles) {
+        this(id, username, roles, null);
     }
 
     public Long getId() {

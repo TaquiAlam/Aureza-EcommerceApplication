@@ -26,7 +26,7 @@ public class FileServiceimpl implements FileService{
         // Check if path exist and create
         File folder = new File(path);
         if (!folder.exists())
-            folder.mkdir();
+            folder.mkdirs();
 
         // Upload to server
         Files.copy(file.getInputStream(), Paths.get(filePath));

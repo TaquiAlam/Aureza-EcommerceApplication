@@ -127,7 +127,10 @@ public class AuthTokenFilter extends OncePerRequestFilter {
      * @return raw JWT, ya null agar Authorization header missing/malformed hai
      */
     private String parseJwt(HttpServletRequest request) {
-        String jwt = jwtUtils.getJWTfromcookies(request);
+        String jwt = jwtUtils.getJwtFromHeader(request);
+        if (jwt == null || jwt.trim().isEmpty()) {
+            jwt = jwtUtils.getJWTfromcookies(request);
+        }
         logger.debug("AuthTokenFilter.java: {}", jwt);
         return jwt;
     }

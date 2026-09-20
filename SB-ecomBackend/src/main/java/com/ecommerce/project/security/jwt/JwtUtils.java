@@ -66,14 +66,15 @@ public class JwtUtils {
     Header missing ho ya Bearer  se shuru na ho to null return hota hai.
     Yahi wajah hai ki caller ko null check karna zaroori hai.
      */
-//    public String getJwtFromHeader(HttpServletRequest request) {
-//        String bearerToken = request.getHeader("Authorization");
-//        logger.debug("Authorization Header: {}", bearerToken);
-//        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
-//            return bearerToken.substring(7); // Remove Bearer prefix
-//        }
-//        return null;
-//    }
+    public String getJwtFromHeader(HttpServletRequest request) {
+        String bearerToken = request.getHeader("Authorization");
+        logger.debug("Authorization Header: {}", bearerToken);
+        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+            return bearerToken.substring(7); // Remove Bearer prefix
+        }
+        return null;
+    }
+
     /*
     Dekho bhai hm ab tak header mai tokens send and recieve kr rhe the but we want ki hamara browser yaad rakhe ki hamra
       JWT token kya hai..to hm istemal krte hain cookies ka .
@@ -92,7 +93,11 @@ public class JwtUtils {
     public ResponseCookie generateJWTcookie(UserDetailsimpl userDetailsimpl) {
        String jwt=generateTokenFromUsername(userDetailsimpl.getUsername());
        ResponseCookie cookie=ResponseCookie.from(jwtcookie,jwt).path("/api")
-               .maxAge(24*60*60).httpOnly(false).build();
+               .maxAge(24*60*60)
+               .httpOnly(true)
+               .secure(true)
+               .sameSite("None")
+               .build();
        return cookie;
     }
 
@@ -144,8 +149,12 @@ public class JwtUtils {
     }
 //this method is use for clean cookie such that user can logout...
     public ResponseCookie getCleanJwtCookie() {
-        ResponseCookie cookie = ResponseCookie.from(jwtcookie, null)
+        ResponseCookie cookie = ResponseCookie.from(jwtcookie, "")
                 .path("/api")
+                .maxAge(0)
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("None")
                 .build();
         return cookie;
     }
