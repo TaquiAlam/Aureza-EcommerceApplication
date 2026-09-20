@@ -105,8 +105,11 @@ export default function ProfilePage() {
     );
   }
 
-  const backendBase = 'http://localhost:8080';
-  const profileImageUrl = profile?.profileImage
+  const backendBase = import.meta.env.VITE_API_URL
+    ? import.meta.env.VITE_API_URL.replace(/\/+$/, '')
+    : 'http://localhost:8080';
+
+  const profileImageUrl = profile?.profileImage && typeof profile.profileImage === 'string'
     ? (profile.profileImage.startsWith('http') ? profile.profileImage : `${backendBase}/images/${profile.profileImage}`)
     : null;
 
@@ -133,12 +136,12 @@ export default function ProfilePage() {
                 {profileImageUrl ? (
                   <img
                     src={profileImageUrl}
-                    alt={profile?.fullName || profile?.username}
+                    alt={profile?.fullName || profile?.username || 'User'}
                     className="w-full h-full object-cover"
                   />
                 ) : (
                   <span className="text-4xl font-black text-[#E47911]">
-                    {(profile?.fullName || profile?.username || 'U').charAt(0).toUpperCase()}
+                    {String(profile?.fullName || profile?.username || 'U').charAt(0).toUpperCase()}
                   </span>
                 )}
               </div>
@@ -181,18 +184,18 @@ export default function ProfilePage() {
             </div>
 
             <h2 className="text-xl font-bold text-[#0F1111] truncate">
-              {profile?.fullName || profile?.username}
+              {profile?.fullName || profile?.username || 'Your Account'}
             </h2>
-            <p className="text-xs text-gray-500 mt-0.5">@{profile?.username}</p>
+            <p className="text-xs text-gray-500 mt-0.5">@{profile?.username || 'guest'}</p>
 
             {/* Role Badges */}
             <div className="flex flex-wrap items-center justify-center gap-1.5 mt-3">
-              {profile?.roles?.map((r) => (
+              {Array.isArray(profile?.roles) && profile.roles.map((r) => (
                 <span
                   key={r}
                   className="px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-[#FFF8E7] text-[#B12704] border border-[#FBD8B5]"
                 >
-                  {r.replace('ROLE_', '')}
+                  {typeof r === 'string' ? r.replace('ROLE_', '') : r}
                 </span>
               ))}
             </div>

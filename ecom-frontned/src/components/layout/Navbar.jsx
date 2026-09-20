@@ -109,7 +109,7 @@ export default function Navbar() {
 
             {/* Dynamic Location Badge */}
             <div
-              onClick={() => navigate(user ? '/checkout' : '/login')}
+              onClick={() => navigate(user ? (cartItemCount > 0 ? '/checkout' : '/profile') : '/login')}
               className="hidden lg:flex items-center gap-1.5 py-1 px-2 border border-transparent hover:border-white rounded transition-colors cursor-pointer text-xs leading-tight"
               title={userAddress ? `${userAddress.buildingName ? userAddress.buildingName + ', ' : ''}${userAddress.streetAddress}, ${userAddress.city} - ${userAddress.pincode}` : 'Click to select delivery address'}
             >
@@ -179,14 +179,14 @@ export default function Navbar() {
               >
                 {user && profile?.profileImage ? (
                   <img
-                    src={`http://localhost:8080/images/${profile.profileImage}`}
+                    src={profile.profileImage.startsWith('http') ? profile.profileImage : `${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/+$/, '') : 'http://localhost:8080'}/images/${profile.profileImage}`}
                     alt="avatar"
                     className="w-6 h-6 rounded-full object-cover border border-[#FEB800] shrink-0"
                   />
                 ) : null}
                 <div className="flex flex-col text-left">
                   <span className="text-[11px] text-gray-300">
-                    Hello, {user ? (profile?.fullName ? profile.fullName.split(' ')[0] : user.username) : 'Sign in'}
+                    Hello, {user ? (profile?.fullName && typeof profile.fullName === 'string' ? profile.fullName.split(' ')[0] : (user?.username || 'User')) : 'Sign in'}
                   </span>
                   <span className="font-bold text-white flex items-center gap-0.5 text-xs">
                     Account & Lists <ChevronDown size={12} className="text-gray-400" />
@@ -203,17 +203,17 @@ export default function Navbar() {
                         <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-100 to-orange-200 border border-amber-300 flex items-center justify-center font-bold text-sm text-[#E47911] overflow-hidden shrink-0">
                           {profile?.profileImage ? (
                             <img
-                              src={`http://localhost:8080/images/${profile.profileImage}`}
+                              src={profile.profileImage.startsWith('http') ? profile.profileImage : `${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/+$/, '') : 'http://localhost:8080'}/images/${profile.profileImage}`}
                               alt="Avatar"
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            (profile?.fullName || user.username).charAt(0).toUpperCase()
+                            String(profile?.fullName || user?.username || 'U').charAt(0).toUpperCase()
                           )}
                         </div>
                         <div className="flex flex-col overflow-hidden">
-                          <p className="font-bold text-sm text-[#131921] truncate">{profile?.fullName || user.username}</p>
-                          <p className="text-[11px] text-gray-500 truncate">@{user.username}</p>
+                          <p className="font-bold text-sm text-[#131921] truncate">{profile?.fullName || user?.username || 'User'}</p>
+                          <p className="text-[11px] text-gray-500 truncate">@{user?.username || 'user'}</p>
                         </div>
                       </div>
 
@@ -315,7 +315,7 @@ export default function Navbar() {
 
         {/* Mobile Delivery Location */}
         <div
-          onClick={() => navigate(user ? '/checkout' : '/login')}
+          onClick={() => navigate(user ? (cartItemCount > 0 ? '/checkout' : '/profile') : '/login')}
           className="flex lg:hidden items-center gap-1.5 pt-2 text-xs cursor-pointer text-gray-300"
         >
           <MapPin size={14} className="text-[#FF9900] shrink-0" />
