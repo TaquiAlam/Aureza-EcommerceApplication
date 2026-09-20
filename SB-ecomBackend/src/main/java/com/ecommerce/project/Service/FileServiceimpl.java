@@ -14,24 +14,25 @@ import java.util.UUID;
 public class FileServiceimpl implements FileService{
     @Override
     public String uploadImage(String path, MultipartFile file) throws IOException {
-        // File names of current / original file
         String originalFileName = file.getOriginalFilename();
 
-        // Generate a unique file name
+        String ext = ".jpg";
+        if (originalFileName != null && originalFileName.contains(".")) {
+            ext = originalFileName.substring(originalFileName.lastIndexOf('.'));
+        }
+
         String randomId = UUID.randomUUID().toString();
-        // mat.jpg --> 1234 --> 1234.jpg
-        String fileName = randomId.concat(originalFileName.substring(originalFileName.lastIndexOf('.')));
-        String filePath = path + File.separator + fileName;
+        String fileName = randomId.concat(ext);
 
-        // Check if path exist and create
         File folder = new File(path);
-        if (!folder.exists())
+        if (!folder.exists()) {
             folder.mkdirs();
+        }
 
-        // Upload to server
-        Files.copy(file.getInputStream(), Paths.get(filePath));
+        String filePath = path + (path.endsWith(File.separator) ? "" : File.separator) + fileName;
 
-        // returning file name
+        Files.copy(file.getInputStream(), Paths.get(filePath), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+
         return fileName;
     }
 }

@@ -335,32 +335,41 @@ export default function Navbar() {
         <div className="max-w-[1480px] mx-auto flex items-center gap-1 overflow-x-auto hide-scrollbar">
           <Link
             to="/products"
-            className="flex items-center gap-1.5 py-1 px-2 rounded hover:outline hover:outline-1 hover:outline-white shrink-0 font-bold"
+            className="flex items-center gap-1.5 py-1 px-2 rounded hover:outline hover:outline-1 hover:outline-white shrink-0 font-bold text-white"
           >
             <Menu size={16} /> All
           </Link>
-          <Link to="/products" className="py-1 px-2 rounded hover:outline hover:outline-1 hover:outline-white shrink-0 text-gray-200 hover:text-white">
+          <Link
+            to="/products?deals=true"
+            className="py-1 px-2 rounded hover:outline hover:outline-1 hover:outline-white shrink-0 text-gray-200 hover:text-white font-medium"
+          >
             Today's Deals
           </Link>
-          <Link to="/products?category=electronics" className="py-1 px-2 rounded hover:outline hover:outline-1 hover:outline-white shrink-0 text-gray-200 hover:text-white">
-            Electronics
-          </Link>
-          <Link to="/products?category=mobiles" className="py-1 px-2 rounded hover:outline hover:outline-1 hover:outline-white shrink-0 text-gray-200 hover:text-white">
-            Mobiles
-          </Link>
-          <Link to="/products?category=fashion" className="py-1 px-2 rounded hover:outline hover:outline-1 hover:outline-white shrink-0 text-gray-200 hover:text-white">
-            Fashion
-          </Link>
-          <Link to="/products?category=home" className="py-1 px-2 rounded hover:outline hover:outline-1 hover:outline-white shrink-0 text-gray-200 hover:text-white">
-            Home & Kitchen
-          </Link>
-          <Link to="/products?category=books" className="py-1 px-2 rounded hover:outline hover:outline-1 hover:outline-white shrink-0 text-gray-200 hover:text-white">
-            Books
-          </Link>
-          <Link to="/about" className="py-1 px-2 rounded hover:outline hover:outline-1 hover:outline-white shrink-0 text-gray-200 hover:text-white">
+          {categories.length > 0 ? (
+            categories.slice(0, 6).map((cat) => {
+              const id = cat.categoryID || cat.categoryId || cat.id;
+              return (
+                <Link
+                  key={id}
+                  to={`/products?category=${id}&catName=${encodeURIComponent(cat.categoryName)}`}
+                  className="py-1 px-2 rounded hover:outline hover:outline-1 hover:outline-white shrink-0 text-gray-200 hover:text-white font-medium"
+                >
+                  {cat.categoryName}
+                </Link>
+              );
+            })
+          ) : (
+            <>
+              <Link to="/products?category=electronics" className="py-1 px-2 rounded hover:outline hover:outline-1 hover:outline-white shrink-0 text-gray-200 hover:text-white font-medium">Electronics</Link>
+              <Link to="/products?category=smartphones" className="py-1 px-2 rounded hover:outline hover:outline-1 hover:outline-white shrink-0 text-gray-200 hover:text-white font-medium">Mobiles</Link>
+              <Link to="/products?category=fashion" className="py-1 px-2 rounded hover:outline hover:outline-1 hover:outline-white shrink-0 text-gray-200 hover:text-white font-medium">Fashion</Link>
+              <Link to="/products?category=home" className="py-1 px-2 rounded hover:outline hover:outline-1 hover:outline-white shrink-0 text-gray-200 hover:text-white font-medium">Home & Living</Link>
+            </>
+          )}
+          <Link to="/about" className="py-1 px-2 rounded hover:outline hover:outline-1 hover:outline-white shrink-0 text-gray-200 hover:text-white font-medium">
             Customer Service
           </Link>
-          <Link to="/contact" className="py-1 px-2 rounded hover:outline hover:outline-1 hover:outline-white shrink-0 text-gray-200 hover:text-white">
+          <Link to="/contact" className="py-1 px-2 rounded hover:outline hover:outline-1 hover:outline-white shrink-0 text-gray-200 hover:text-white font-medium">
             Sell
           </Link>
           <div className="ml-auto hidden lg:flex items-center gap-1 text-[#FEB800] py-1 px-2 shrink-0">

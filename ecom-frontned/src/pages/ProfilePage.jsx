@@ -86,8 +86,9 @@ export default function ProfilePage() {
       const res = await uploadProfilePhoto(file);
       setProfile(res.data);
       toast.success('Profile photo updated!', { id: loadingToast });
-    } catch {
-      toast.error('Failed to upload profile photo', { id: loadingToast });
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Failed to upload profile photo';
+      toast.error(msg, { id: loadingToast });
     } finally {
       setUploadingPhoto(false);
       if (fileInputRef.current) {

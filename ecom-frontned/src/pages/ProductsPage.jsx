@@ -51,21 +51,46 @@ export default function ProductsPage() {
         let res;
         const search = searchParams.get('search');
         const category = searchParams.get('category');
+        const deals = searchParams.get('deals');
 
         if (search) {
           res = await searchProducts(search, pageNumber, pageSize, sortBy, sortOrder);
         } else if (category) {
-          res = await getProductsByCategory(category, pageNumber, pageSize, sortBy, sortOrder);
+          // Check if category is a numeric ID or a string name (e.g. 'electronics', 'fashion')
+          let catId = !isNaN(category) ? Number(category) : null;
+          if (!catId && categories.length > 0) {
+            const matched = categories.find(c =>
+              c.categoryName?.toLowerCase().includes(category.toLowerCase()) ||
+              category.toLowerCase().includes(c.categoryName?.toLowerCase())
+            );
+            if (matched) {
+              catId = matched.categoryID || matched.categoryId || matched.id;
+            }
+          }
+
+          if (catId) {
+            res = await getProductsByCategory(catId, pageNumber, pageSize, sortBy, sortOrder);
+          } else {
+            // Search by keyword if no numeric category ID exists
+            res = await searchProducts(category, pageNumber, pageSize, sortBy, sortOrder);
+          }
         } else {
           res = await getAllProducts(pageNumber, pageSize, sortBy, sortOrder);
         }
 
-        const list = res.data.content || [];
+        let list = res?.data?.content || [];
+        if (deals === 'true') {
+          list = list.filter(p => p.discount > 0).sort((a, b) => b.discount - a.discount);
+        }
         setProducts(list);
-        setTotalPages(res.data.totalPages || 1);
-        setTotalElements(res.data.totalElements || list.length);
-      } catch {
-        // High quality fallback products so the section always displays rich content
+        setTotalPages(res?.data?.totalPages || 1);
+        setTotalElements(res?.data?.totalElements || list.length);
+      } catch (err) {
+        console.error('Error fetching products:', err);
+        const categoryParam = searchParams.get('category')?.toLowerCase();
+        const searchParam = searchParams.get('search')?.toLowerCase();
+        const dealsParam = searchParams.get('deals');
+
         const fallbackList = [
           { productId: 101, productName: 'Apple iPhone 15 (128 GB) - Black', categoryName: 'Mobiles', price: 79900, specialPrice: 69999, discount: 12, quantity: 8, image: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=500&auto=format&fit=crop&q=60' },
           { productId: 102, productName: 'Sony WH-1000XM5 Wireless Noise Cancelling Headphones', categoryName: 'Electronics', price: 34990, specialPrice: 26990, discount: 23, quantity: 4, image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&auto=format&fit=crop&q=60' },
@@ -76,15 +101,32 @@ export default function ProductsPage() {
           { productId: 107, productName: 'Logitech MX Master 3S Wireless Performance Mouse', categoryName: 'Electronics', price: 10995, specialPrice: 8995, discount: 18, quantity: 0, image: 'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=500&auto=format&fit=crop&q=60' },
           { productId: 108, productName: 'Atomic Habits by James Clear - Bestseller', categoryName: 'Books', price: 799, specialPrice: 499, discount: 37, quantity: 25, image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=500&auto=format&fit=crop&q=60' }
         ];
-        setProducts(fallbackList);
+
+        let filtered = fallbackList;
+        if (categoryParam) {
+          filtered = filtered.filter(p =>
+            p.categoryName?.toLowerCase().includes(categoryParam) ||
+            p.productName?.toLowerCase().includes(categoryParam)
+          );
+        } else if (searchParam) {
+          filtered = filtered.filter(p =>
+            p.productName?.toLowerCase().includes(searchParam) ||
+            p.categoryName?.toLowerCase().includes(searchParam)
+          );
+        }
+        if (dealsParam === 'true') {
+          filtered = filtered.filter(p => p.discount > 0).sort((a, b) => b.discount - a.discount);
+        }
+
+        setProducts(filtered);
         setTotalPages(1);
-        setTotalElements(fallbackList.length);
+        setTotalElements(filtered.length);
       } finally {
         setLoading(false);
       }
     };
     fetchProducts();
-  }, [searchParams, pageNumber, pageSize, sortBy, sortOrder]);
+  }, [searchParams, pageNumber, pageSize, sortBy, sortOrder, categories]);
 
   const handleSearch = (e) => {
     e.preventDefault();
