@@ -36,11 +36,9 @@ public class CategoryServiceimpl implements CategoryService {
         Pageable pagedetails = PageRequest.of(PageNumber, PageSize,sortASCorDSC);
         Page<CategoryModel> contentPage=categoryRepo.findAll(pagedetails);
         List<CategoryModel> list = contentPage.getContent();
-        if(list.isEmpty()){
-            throw new APIException("Category Not Found");
-        }
-        List<CategoryRequestDTO> categoryDTOS=list.stream().
-                map(CategoryX-> modelMapper.map(CategoryX, CategoryRequestDTO.class)).toList();
+        List<CategoryRequestDTO> categoryDTOS = list.isEmpty()
+                ? java.util.Collections.emptyList()
+                : list.stream().map(CategoryX-> modelMapper.map(CategoryX, CategoryRequestDTO.class)).toList();
         CategoryResponseDTO categoryResponseDTO = new CategoryResponseDTO();
         categoryResponseDTO.setContent(categoryDTOS);
         categoryResponseDTO.setPageNumber(contentPage.getNumber());

@@ -32,7 +32,7 @@ public class UserServiceImpl implements UserService {
     private FileService fileService;
 
     @Value("${project.file}")
-    private String path;
+    private String path;    
 
     @Override
     public UserProfileResponse getUserProfile() {

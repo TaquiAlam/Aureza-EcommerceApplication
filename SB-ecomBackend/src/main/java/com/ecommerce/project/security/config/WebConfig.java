@@ -17,10 +17,11 @@ public class WebConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
         WebMvcConfigurer.super.addCorsMappings(registry);
         registry.addMapping("/**")
-                .allowedOrigins("http://localhost:8080", frontnedUrl)
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedOriginPatterns("https://*.vercel.app", "http://localhost:*", "http://127.0.0.1:*")
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH")
                 .allowCredentials(true)
-                .allowedHeaders("*");
+                .allowedHeaders("*")
+                .exposedHeaders("Authorization", "Content-Type", "Set-Cookie");
     }
 
     @Override
