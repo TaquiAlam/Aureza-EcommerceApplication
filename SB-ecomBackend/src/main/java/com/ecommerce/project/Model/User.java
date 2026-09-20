@@ -76,10 +76,10 @@ public class User {
     @Getter
     @Setter
     @OneToMany(mappedBy = "user", cascade = {CascadeType.PERSIST,CascadeType.MERGE},fetch = FetchType.EAGER,orphanRemoval = true)
-    //@JoinTable(name = "user_address",
-          //  joinColumns = @JoinColumn(name = "user_id"),
-            //inverseJoinColumns = @JoinColumn(name="address_id"))
     private List<Address> addresses=new ArrayList<>();
 
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    private UserProfile userProfile;
 
 }
