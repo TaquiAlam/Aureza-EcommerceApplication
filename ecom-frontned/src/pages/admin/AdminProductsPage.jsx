@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Loader, Save, X, Image as ImageIcon } from 'lucide-react';
-import { getAllProducts, addProduct, updateProduct, deleteProduct, updateProductImage } from '../api/productApi';
-import { getAllCategories } from '../api/categoryApi';
-import { formatPrice } from '../utils/formatPrice';
+import { getAllProducts, addProduct, updateProduct, deleteProduct, updateProductImage } from '../../api/productApi';
+import { getAllCategories } from '../../api/categoryApi';
+import { formatPrice } from '../../utils/formatPrice';
 import toast from 'react-hot-toast';
 
 export default function AdminProductsPage() {

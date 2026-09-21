@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Package, ShoppingCart, DollarSign, Loader } from 'lucide-react';
-import { getAnalytics } from '../api/analyticsApi';
-import { formatPrice } from '../utils/formatPrice';
+import { getAnalytics } from '../../api/analyticsApi';
+import { formatPrice } from '../../utils/formatPrice';
 
 export default function AdminDashboardPage() {
   const [analytics, setAnalytics] = useState({

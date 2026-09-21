@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Loader, Plus, X, ShieldCheck } from 'lucide-react';
-import { getAllSellers, addSeller } from '../api/authApi';
+import { getAllSellers, addSeller } from '../../api/authApi';
 import toast from 'react-hot-toast';
 
 export default function AdminSellersPage() {

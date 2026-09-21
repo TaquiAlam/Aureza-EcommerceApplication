@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Loader, Save, X } from 'lucide-react';
-import { getAllCategories, createCategory, updateCategory, deleteCategory } from '../api/categoryApi';
+import { getAllCategories, createCategory, updateCategory, deleteCategory } from '../../api/categoryApi';
 import toast from 'react-hot-toast';
 
 export default function AdminCategoriesPage() {

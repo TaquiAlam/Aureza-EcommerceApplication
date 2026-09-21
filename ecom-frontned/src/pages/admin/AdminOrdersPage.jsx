@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Loader, Eye, ChevronDown } from 'lucide-react';
-import { getAllOrders, updateOrderStatus } from '../api/orderApi';
+import { getAllOrders, updateOrderStatus } from '../../api/orderApi';
 import toast from 'react-hot-toast';
-import { formatPrice } from '../utils/formatPrice';
+import { formatPrice } from '../../utils/formatPrice';
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState([]);

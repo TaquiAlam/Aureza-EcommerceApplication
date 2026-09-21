@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle, Package, ArrowRight, ShoppingBag, ShoppingCart } from 'lucide-react';
-import CheckoutStepper from '../components/checkout/CheckoutStepper';
+import CheckoutStepper from '../components/organisms/CheckoutStepper';
 
 export default function PaymentConfirmationPage() {
   const navigate = useNavigate();

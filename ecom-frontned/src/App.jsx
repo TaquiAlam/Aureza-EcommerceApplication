@@ -1,5 +1,9 @@
 import { Routes, Route } from 'react-router-dom';
-import Layout from './components/layout/Layout';
+import MainLayout from './components/templates/MainLayout';
+import PrivateRoute from './components/templates/PrivateRoute';
+import AdminLayout from './components/templates/AdminLayout';
+
+// Pages
 import HomePage from './pages/HomePage';
 import ProductsPage from './pages/ProductsPage';
 import CartPage from './pages/CartPage';
@@ -7,24 +11,24 @@ import CheckoutPage from './pages/CheckoutPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import NotFoundPage from './pages/NotFoundPage';
-import PrivateRoute from './components/layout/PrivateRoute';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
 import ProfilePage from './pages/ProfilePage';
 import AddressesPage from './pages/AddressesPage';
 import PaymentConfirmationPage from './pages/PaymentConfirmationPage';
-import AdminLayout from './components/layout/AdminLayout';
-import AdminDashboardPage from './pages/AdminDashboardPage';
-import AdminProductsPage from './pages/AdminProductsPage';
-import AdminCategoriesPage from './pages/AdminCategoriesPage';
-import AdminOrdersPage from './pages/AdminOrdersPage';
-import AdminSellersPage from './pages/AdminSellersPage';
+
+// Admin Pages
+import AdminDashboardPage from './pages/admin/AdminDashboardPage';
+import AdminProductsPage from './pages/admin/AdminProductsPage';
+import AdminCategoriesPage from './pages/admin/AdminCategoriesPage';
+import AdminOrdersPage from './pages/admin/AdminOrdersPage';
+import AdminSellersPage from './pages/admin/AdminSellersPage';
 
 export default function App() {
   return (
     <Routes>
       {/* Public Pages with Standard Layout */}
-      <Route element={<Layout />}>
+      <Route element={<MainLayout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/products" element={<ProductsPage />} />
         <Route path="/cart" element={<CartPage />} />

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { handleApiError } from '../utils/errorUtils';
 
 const baseURL = import.meta.env.VITE_API_URL
   ? `${import.meta.env.VITE_API_URL.replace(/\/+$/, '')}/api`
@@ -7,6 +8,7 @@ const baseURL = import.meta.env.VITE_API_URL
 const api = axios.create({
   baseURL,
   withCredentials: true,
+  timeout: 15000, // 15 second timeout
   headers: {
     'Content-Type': 'application/json',
   },
@@ -27,7 +29,7 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor for handling auth errors & SPA fallback HTML detection
+// Response interceptor for handling errors globally
 api.interceptors.response.use(
   (response) => {
     // If an API request receives an HTML string (due to SPA fallback when backend is unreachable), treat as error
@@ -37,9 +39,16 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    if (error.response?.status === 401) {
-      // User is not authenticated — don't redirect automatically
+    const status = error.response?.status;
+
+    // Auto-toast for server errors (500+) — these are never the user's fault
+    if (status && status >= 500) {
+      handleApiError(error, { toastId: 'server-error' });
     }
+
+    // 401 — don't redirect automatically, let pages/contexts handle it
+    // All other errors are passed through for page-level handling
+
     return Promise.reject(error);
   }
 );

@@ -23,7 +23,7 @@ import { useCart } from '../hooks/useCart';
 import { getUserAddresses, createAddress } from '../api/addressApi';
 import { placeOrder } from '../api/orderApi';
 import { formatPrice } from '../utils/formatPrice';
-import CheckoutStepper from '../components/checkout/CheckoutStepper';
+import CheckoutStepper from '../components/organisms/CheckoutStepper';
 import toast from 'react-hot-toast';
 
 export default function CheckoutPage() {
