@@ -11,6 +11,7 @@ import PrivateRoute from './components/layout/PrivateRoute';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
 import ProfilePage from './pages/ProfilePage';
+import AddressesPage from './pages/AddressesPage';
 import PaymentConfirmationPage from './pages/PaymentConfirmationPage';
 import AdminLayout from './components/layout/AdminLayout';
 import AdminDashboardPage from './pages/AdminDashboardPage';
@@ -33,6 +34,7 @@ export default function App() {
         {/* Protected Customer Routes */}
         <Route element={<PrivateRoute />}>
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/addresses" element={<AddressesPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/order-confirm" element={<PaymentConfirmationPage />} />
         </Route>

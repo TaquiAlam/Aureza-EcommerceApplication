@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Camera, User, Mail, Phone, FileText, ShieldCheck, MapPin, CheckCircle2, Save, X, Loader2 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { getUserProfile, updateUserProfile, uploadProfilePhoto } from '../api/userApi';
+import { getUserAddresses } from '../api/addressApi';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
@@ -10,6 +11,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(!profile);
   const [saving, setSaving] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [savedAddressesCount, setSavedAddressesCount] = useState(0);
   
   const [formData, setFormData] = useState({
     fullName: '',
@@ -29,6 +31,13 @@ export default function ProfilePage() {
           phoneNumber: res.data.phoneNumber || '',
           bio: res.data.bio || '',
         });
+        // Also fetch live addresses count
+        try {
+          const addrRes = await getUserAddresses();
+          setSavedAddressesCount((addrRes.data || []).length);
+        } catch {
+          // ignore
+        }
       } catch {
         toast.error('Failed to load profile details');
       } finally {
@@ -210,7 +219,7 @@ export default function ProfilePage() {
               </div>
               <div className="flex items-center justify-between text-gray-600">
                 <span>Saved Addresses</span>
-                <span className="font-semibold text-gray-800">{profile?.addressesCount || 0}</span>
+                <span className="font-semibold text-gray-800">{savedAddressesCount || profile?.addressesCount || 0}</span>
               </div>
             </div>
           </div>
@@ -221,7 +230,7 @@ export default function ProfilePage() {
               Quick Shortcuts
             </h3>
             <Link
-              to="/checkout"
+              to="/addresses"
               className="flex items-center justify-between p-3 rounded-xl bg-[#FAF7F2] hover:bg-[#F2ECE1] transition-colors border border-[#E8E2D6] text-sm text-[#0F1111] font-semibold"
             >
               <div className="flex items-center gap-2.5">

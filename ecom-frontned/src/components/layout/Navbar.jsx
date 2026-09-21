@@ -119,9 +119,9 @@ export default function Navbar() {
 
             {/* Dynamic Location Badge */}
             <div
-              onClick={() => navigate(user ? (cartItemCount > 0 ? '/checkout' : '/profile') : '/login')}
+              onClick={() => navigate(user ? '/addresses' : '/login')}
               className="hidden lg:flex items-center gap-1.5 py-1 px-2 border border-transparent hover:border-white rounded transition-colors cursor-pointer text-xs leading-tight"
-              title={userAddress ? `${userAddress.buildingName ? userAddress.buildingName + ', ' : ''}${userAddress.streetAddress}, ${userAddress.city} - ${userAddress.pincode}` : 'Click to select delivery address'}
+              title={userAddress ? `${userAddress.buildingName ? userAddress.buildingName + ', ' : ''}${userAddress.streetAddress}, ${userAddress.city} - ${userAddress.pincode}` : 'Click to manage delivery addresses'}
             >
               <MapPin size={16} className="text-gray-300 self-end mb-0.5" />
               <div className="flex flex-col">
@@ -234,6 +234,9 @@ export default function Navbar() {
                         <Link to="/profile" className="py-1.5 px-2 rounded hover:bg-gray-100 hover:text-[#007185] flex items-center gap-2 font-semibold text-[#0F1111] transition-colors">
                           <User size={14} className="text-[#E47911]" /> Your Profile & Photo
                         </Link>
+                        <Link to="/addresses" className="py-1.5 px-2 rounded hover:bg-gray-100 hover:text-[#007185] flex items-center gap-2 font-semibold text-[#0F1111] transition-colors">
+                          <MapPin size={14} className="text-[#E47911]" /> Your Addresses
+                        </Link>
                         <Link to="/products" className="py-1.5 px-2 rounded hover:bg-gray-100 hover:text-[#007185] transition-colors">
                           Your Products & Orders
                         </Link>
@@ -328,7 +331,7 @@ export default function Navbar() {
 
         {/* Mobile Delivery Location */}
         <div
-          onClick={() => navigate(user ? (cartItemCount > 0 ? '/checkout' : '/profile') : '/login')}
+          onClick={() => navigate(user ? '/addresses' : '/login')}
           className="flex lg:hidden items-center gap-1.5 pt-2 text-xs cursor-pointer text-gray-300"
         >
           <MapPin size={14} className="text-[#FF9900] shrink-0" />
