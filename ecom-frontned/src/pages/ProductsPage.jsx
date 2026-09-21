@@ -43,40 +43,22 @@ export default function ProductsPage() {
     fetchCategories();
   }, []);
 
+  // Sync local inputs when searchParams change in URL
+  useEffect(() => {
+    setSearchQuery(searchParams.get('search') || '');
+    setSelectedCategory(searchParams.get('category') || '');
+  }, [searchParams]);
+
   // Fetch products
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
       try {
-        let res;
-        const search = searchParams.get('search');
-        const category = searchParams.get('category');
+        const search = searchParams.get('search') || '';
+        const category = searchParams.get('category') || '';
         const deals = searchParams.get('deals');
 
-        if (search) {
-          res = await searchProducts(search, pageNumber, pageSize, sortBy, sortOrder);
-        } else if (category) {
-          // Check if category is a numeric ID or a string name (e.g. 'electronics', 'fashion')
-          let catId = !isNaN(category) ? Number(category) : null;
-          if (!catId && categories.length > 0) {
-            const matched = categories.find(c =>
-              c.categoryName?.toLowerCase().includes(category.toLowerCase()) ||
-              category.toLowerCase().includes(c.categoryName?.toLowerCase())
-            );
-            if (matched) {
-              catId = matched.categoryID || matched.categoryId || matched.id;
-            }
-          }
-
-          if (catId) {
-            res = await getProductsByCategory(catId, pageNumber, pageSize, sortBy, sortOrder);
-          } else {
-            // Search by keyword if no numeric category ID exists
-            res = await searchProducts(category, pageNumber, pageSize, sortBy, sortOrder);
-          }
-        } else {
-          res = await getAllProducts(pageNumber, pageSize, sortBy, sortOrder);
-        }
+        const res = await getAllProducts(pageNumber, pageSize, sortBy, sortOrder, search, category);
 
         let list = res?.data?.content || [];
         if (deals === 'true') {
@@ -103,12 +85,14 @@ export default function ProductsPage() {
         ];
 
         let filtered = fallbackList;
-        if (categoryParam) {
+        if (categoryParam && categoryParam !== 'all') {
           filtered = filtered.filter(p =>
             p.categoryName?.toLowerCase().includes(categoryParam) ||
-            p.productName?.toLowerCase().includes(categoryParam)
+            p.productName?.toLowerCase().includes(categoryParam) ||
+            String(p.productId) === categoryParam
           );
-        } else if (searchParam) {
+        }
+        if (searchParam) {
           filtered = filtered.filter(p =>
             p.productName?.toLowerCase().includes(searchParam) ||
             p.categoryName?.toLowerCase().includes(searchParam)
@@ -126,7 +110,7 @@ export default function ProductsPage() {
       }
     };
     fetchProducts();
-  }, [searchParams, pageNumber, pageSize, sortBy, sortOrder, categories]);
+  }, [searchParams, pageNumber, pageSize, sortBy, sortOrder]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -144,7 +128,7 @@ export default function ProductsPage() {
     setPageNumber(0);
     setSelectedCategory(categoryId);
     const params = new URLSearchParams(searchParams);
-    if (categoryId) {
+    if (categoryId && categoryId !== 'All') {
       params.set('category', categoryId);
     } else {
       params.delete('category');
@@ -197,11 +181,14 @@ export default function ProductsPage() {
                 className="appearance-none bg-white border border-gray-300 rounded-lg px-3 py-2 pr-8 text-sm text-[#0F1111] font-medium outline-none cursor-pointer hover:border-gray-400 focus:border-[#E77600]"
               >
                 <option value="">All</option>
-                {categories.map((cat) => (
-                  <option key={cat.categoryID} value={cat.categoryID}>
-                    {cat.categoryName}
-                  </option>
-                ))}
+                {categories.map((cat) => {
+                  const id = cat.categoryID || cat.categoryId || cat.id;
+                  return (
+                    <option key={id} value={id}>
+                      {cat.categoryName}
+                    </option>
+                  );
+                })}
               </select>
               <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
             </div>

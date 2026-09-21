@@ -35,6 +35,16 @@ export default function Navbar() {
     fetchCats();
   }, []);
 
+  // Keep Navbar search and category in sync with current URL query parameters
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const search = params.get('search');
+    const cat = params.get('category');
+    if (search !== null) setSearchQuery(search);
+    if (cat !== null) setSelectedCategory(cat);
+    else if (location.pathname === '/products' && !cat) setSelectedCategory('All');
+  }, [location.search, location.pathname]);
+
   // Dynamically fetch user address for location badge
   useEffect(() => {
     const fetchLocation = async () => {
@@ -136,11 +146,14 @@ export default function Navbar() {
               className="h-full bg-[#E6E6E6] hover:bg-[#D4D4D4] text-[#0F1111] text-xs font-medium px-2.5 outline-none cursor-pointer border-r border-[#CDCDCD] shrink-0"
             >
               <option value="All">All</option>
-              {categories.map((cat) => (
-                <option key={cat.categoryID} value={cat.categoryID}>
-                  {cat.categoryName}
-                </option>
-              ))}
+              {categories.map((cat) => {
+                const id = cat.categoryID || cat.categoryId || cat.id;
+                return (
+                  <option key={id} value={id}>
+                    {cat.categoryName}
+                  </option>
+                );
+              })}
             </select>
 
             {/* Input */}

@@ -18,6 +18,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -83,14 +84,33 @@ public class ProductServiceimpl implements ProductService {
     }
 
     @Override
-    public ProductResponceDTO getProducts(Integer pageNumber,Integer pageSize,String sortBy,String sortOrder){
+    public ProductResponceDTO getProducts(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder,String keyword, String category){
         Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc")
                 ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
 
         Pageable pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
+        Specification<Product> spec = (root, query, cb) -> cb.conjunction();
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            spec = spec.and((root, query, criteriaBuilder) ->
+                    criteriaBuilder.like(criteriaBuilder.lower(root.get("productName")), "%" + keyword.trim().toLowerCase() + "%"));
+        }
 
-        Page<Product> products=productRepo.findAll(pageDetails);
+        if (category != null && !category.trim().isEmpty() && !category.equalsIgnoreCase("All")) {
+            spec = spec.and((root, query, criteriaBuilder) -> {
+                try {
+                    Long catId = Long.parseLong(category.trim());
+                    return criteriaBuilder.equal(root.get("category").get("id"), catId);
+                } catch (NumberFormatException e) {
+                    return criteriaBuilder.like(
+                            criteriaBuilder.lower(root.get("category").get("categoryName")),
+                            "%" + category.trim().toLowerCase() + "%"
+                    );
+                }
+            });
+        }
+
+        Page<Product> products=productRepo.findAll(spec,pageDetails);
         List<ProductRequestDTO> ProductsDTO=products.stream()
                 .map(product -> modelMapper.map(product,ProductRequestDTO.class)).toList();
         ProductResponceDTO productResponceDTO=new ProductResponceDTO();
