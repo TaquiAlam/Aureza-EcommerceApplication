@@ -13,7 +13,7 @@ import java.util.List;
 public class OrderResponceDTO {
     private Long orderId;
     private String email;
-    private List<OrderItemDTO> orderItems;
+    private List<OrderItemDTO> orderItems = new java.util.ArrayList<>();
     private LocalDate orderDate;
     private PaymentDTO payment;
     private Double totalAmount;

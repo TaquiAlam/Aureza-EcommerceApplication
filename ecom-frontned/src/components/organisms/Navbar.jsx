@@ -383,10 +383,10 @@ export default function Navbar() {
             </>
           )}
           <Link to="/about" className="py-1 px-2 rounded hover:outline hover:outline-1 hover:outline-white shrink-0 text-gray-200 hover:text-white font-medium">
-            Customer Service
+            About Us
           </Link>
           <Link to="/contact" className="py-1 px-2 rounded hover:outline hover:outline-1 hover:outline-white shrink-0 text-gray-200 hover:text-white font-medium">
-            Sell
+            Contact Us
           </Link>
           <div className="ml-auto hidden lg:flex items-center gap-1 text-[#FEB800] py-1 px-2 shrink-0">
             <Sparkles size={14} />

@@ -1,25 +1,136 @@
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { CheckCircle, Package, ArrowRight, ShoppingBag, ShoppingCart } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { CheckCircle, AlertCircle, Package, ShoppingBag, ShoppingCart, Loader2, ArrowLeft } from 'lucide-react';
 import CheckoutStepper from '../components/organisms/CheckoutStepper';
+import { placeOrder } from '../api/orderApi';
+import { useCart } from '../hooks/useCart';
 
 export default function PaymentConfirmationPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { fetchCart } = useCart();
+
+  const paymentIntentId = searchParams.get('payment_intent');
+  const redirectStatus = searchParams.get('redirect_status');
+
+  const [loading, setLoading] = useState(Boolean(paymentIntentId));
+  const [isSuccess, setIsSuccess] = useState(!paymentIntentId || redirectStatus === 'succeeded');
+  const [errorMessage, setErrorMessage] = useState(
+    redirectStatus && redirectStatus !== 'succeeded'
+      ? `Payment was not completed (Status: ${redirectStatus}).`
+      : ''
+  );
 
   useEffect(() => {
-    // Scroll to top on load
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
+
+    // Handle Stripe redirect flow
+    if (paymentIntentId) {
+      if (redirectStatus === 'succeeded') {
+        const confirmOrderWithBackend = async () => {
+          try {
+            setLoading(true);
+            const addressId = localStorage.getItem('selectedAddressId');
+            if (addressId) {
+              const orderData = {
+                addressId: Number(addressId),
+                paymentMethod: 'CARD',
+                pgName: 'Stripe',
+                pgPaymentId: paymentIntentId,
+                pgStatus: 'Completed',
+                pgResponseMessage: 'Payment verified with Stripe',
+              };
+              await placeOrder('CARD', orderData);
+            }
+            await fetchCart();
+            setIsSuccess(true);
+          } catch (err) {
+            console.error('Order confirmation error:', err);
+            // If the error indicates duplicate or already processed, it is still success
+            if (err.response?.status === 200 || err.response?.status === 201) {
+              setIsSuccess(true);
+            } else {
+              setErrorMessage(err.response?.data?.message || 'Payment confirmed, but failed to link with order record.');
+              setIsSuccess(false);
+            }
+          } finally {
+            setLoading(false);
+          }
+        };
+
+        confirmOrderWithBackend();
+      } else {
+        setLoading(false);
+        setIsSuccess(false);
+      }
+    }
+  }, [paymentIntentId, redirectStatus]);
+
+  if (loading) {
+    return (
+      <div className="py-16 min-h-[60vh] flex flex-col items-center justify-center animate-in fade-in">
+        <div className="text-center max-w-md bg-white border border-[#E8E2D6] rounded-2xl p-8 shadow-sm">
+          <Loader2 size={44} className="text-[#007185] animate-spin mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-[#0F1111] mb-2">Verifying Payment...</h2>
+          <p className="text-xs text-gray-500">
+            Please wait while we confirm your transaction with Stripe and finalize your order.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isSuccess) {
+    return (
+      <div className="py-8 animate-in fade-in duration-300">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6">
+          <CheckoutStepper currentStep={3} />
+
+          <div className="max-w-xl mx-auto bg-white border border-red-200 rounded-2xl shadow-md p-6 sm:p-10 text-center relative overflow-hidden">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto bg-red-50 rounded-full flex items-center justify-center mb-6 ring-8 ring-red-50/50 border border-red-200">
+              <AlertCircle size={52} className="text-red-600" />
+            </div>
+
+            <span className="inline-block bg-red-100 text-red-800 text-xs font-bold px-3 py-1 rounded-full mb-3">
+              Payment Unsuccessful
+            </span>
+
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0F1111] mb-2 tracking-tight">
+              Order Incomplete
+            </h1>
+            <p className="text-gray-600 mb-6 text-xs sm:text-sm leading-relaxed">
+              {errorMessage || 'We were unable to verify your payment. Your card was not charged, and no items have been placed.'}
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <button
+                onClick={() => navigate('/checkout')}
+                className="w-full sm:w-auto px-8 py-3 bg-[#FFD814] hover:bg-[#F7CA00] text-[#0F1111] font-bold text-sm rounded-lg border border-[#FCD200] shadow-sm flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95"
+              >
+                <ArrowLeft size={17} />
+                Return to Checkout
+              </button>
+              <button
+                onClick={() => navigate('/cart')}
+                className="w-full sm:w-auto px-6 py-3 btn btn-secondary text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95"
+              >
+                <ShoppingCart size={17} />
+                View Cart
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="py-8 animate-in fade-in duration-300">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6">
-        
         {/* Step 4: Complete Stepper Header */}
         <CheckoutStepper currentStep={4} />
 
         <div className="max-w-xl mx-auto bg-white border border-[#E8E2D6] rounded-2xl shadow-md p-6 sm:p-10 text-center relative overflow-hidden">
-          
           {/* Background glow */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1/2 bg-emerald-500/10 blur-[60px] -z-10 rounded-full pointer-events-none"></div>
 
@@ -46,7 +157,7 @@ export default function PaymentConfirmationPage() {
               <li className="flex items-start gap-3">
                 <Package size={18} className="text-[#FF9900] shrink-0 mt-0.5" />
                 <span className="text-xs sm:text-sm text-gray-700">
-                  You will receive an order confirmation email and SMS with shipment tracking details.
+                  You will receive an order confirmation email with shipment tracking details.
                 </span>
               </li>
               <li className="flex items-start gap-3">
@@ -74,7 +185,6 @@ export default function PaymentConfirmationPage() {
               View Cart
             </button>
           </div>
-
         </div>
       </div>
     </div>

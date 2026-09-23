@@ -40,4 +40,20 @@ public class MyGlobalExceptionHandler {
         return new ResponseEntity<>(apiResponce, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(com.stripe.exception.StripeException.class)
+    public ResponseEntity<APIResponce> myStripeException(com.stripe.exception.StripeException e) {
+        String message = e.getMessage();
+        APIResponce apiResponce = new APIResponce("Stripe Gateway Error: " + message, false);
+        return new ResponseEntity<>(apiResponce, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(jakarta.validation.ConstraintViolationException.class)
+    public ResponseEntity<APIResponce> myConstraintViolationException(jakarta.validation.ConstraintViolationException e) {
+        String message = e.getConstraintViolations().stream()
+                .map(jakarta.validation.ConstraintViolation::getMessage)
+                .reduce((m1, m2) -> m1 + ", " + m2)
+                .orElse(e.getMessage());
+        APIResponce apiResponce = new APIResponce("Validation Error: " + message, false);
+        return new ResponseEntity<>(apiResponce, HttpStatus.BAD_REQUEST);
+    }
 }

@@ -85,7 +85,7 @@ public class AuthController {
         String jwtToken = jwtUtils.generateTokenFromUsername(userDetails.getUsername());
 
         UserLoginResponse response = new UserLoginResponse(userDetails.getId(),
-                userDetails.getUsername(), roles, jwtToken);
+                userDetails.getUsername(), roles,userDetails.getEmail() , jwtToken);
 
         return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, JWTcookie.toString()).body(response);
     }
@@ -158,7 +158,7 @@ public class AuthController {
         String jwtToken = jwtUtils.generateTokenFromUsername(userDetails.getUsername());
 
         UserLoginResponse response = new UserLoginResponse(userDetails.getId(),
-                userDetails.getUsername(), roles, jwtToken);
+                userDetails.getUsername(), roles,userDetails.getEmail() , jwtToken);
 
         return ResponseEntity.ok().body(response);
     }

@@ -10,3 +10,6 @@ export const getAllOrders = (pageNumber = 0, pageSize = 50, sortBy = 'orderId', 
 
 export const updateOrderStatus = (orderId, status) =>
   api.put(`/admin/orders/${orderId}/status`, { status });
+
+export const createStripeClientSecret = (data) =>
+  api.post('/order/stripe-client-secret', data);

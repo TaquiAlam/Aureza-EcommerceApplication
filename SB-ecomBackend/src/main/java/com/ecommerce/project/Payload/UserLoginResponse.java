@@ -6,17 +6,21 @@ public class UserLoginResponse {
     private Long id;
     private String jwtToken;
     private String username;
+    private String email;
     private List<String> roles;
 
-    public UserLoginResponse(Long id, String username, List<String> roles, String jwtToken) {
+    public UserLoginResponse(Long id, String username, List<String> roles,String email, String jwtToken) {
         this.id = id;
         this.username = username;
         this.roles = roles;
         this.jwtToken = jwtToken;
+        this.email = email;
     }
 
     public UserLoginResponse(Long id, String username, List<String> roles) {
-        this(id, username, roles, null);
+        this.id = id;
+        this.username = username;
+        this.roles = roles;
     }
 
     public Long getId() {
@@ -49,6 +53,14 @@ public class UserLoginResponse {
 
     public void setRoles(List<String> roles) {
         this.roles = roles;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 }
 

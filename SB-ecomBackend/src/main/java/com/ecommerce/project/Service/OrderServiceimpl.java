@@ -6,6 +6,8 @@ import com.ecommerce.project.Model.*;
 import com.ecommerce.project.Payload.OrderItemDTO;
 import com.ecommerce.project.Payload.OrderResponceDTO;
 import com.ecommerce.project.Repositories.*;
+import com.stripe.exception.StripeException;
+import com.stripe.model.PaymentIntent;
 import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +16,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class OrderServiceimpl implements OrderService {
@@ -40,6 +43,9 @@ public class OrderServiceimpl implements OrderService {
     private CartService cartService;
 
     @Autowired
+    private StripeService stripeService;
+
+    @Autowired
     private ModelMapper modelMapper;
 
 
@@ -47,15 +53,71 @@ public class OrderServiceimpl implements OrderService {
     @Transactional
     public OrderResponceDTO placeOrder(String emailId, Long addressId, String paymentMethod,
                                        String pgName, String pgPaymentId, String pgStatus, String pgResponseMessage) {
-        //Geeting User Cart
-        Cart cart=cartRepository.findCartByEmail(emailId);
-        if(cart==null){
-            throw new ResourceNotFoundException("Cart","emailId",emailId);
+        // Idempotency: If this payment intent has already created an order, return it directly
+        if (pgPaymentId != null && !pgPaymentId.isBlank()) {
+            Optional<Payment> existingPayment = paymentRepo.findByPgPaymentId(pgPaymentId);
+            if (existingPayment.isPresent() && existingPayment.get().getOrder() != null) {
+                Order existingOrder = existingPayment.get().getOrder();
+                OrderResponceDTO existingDto = modelMapper.map(existingOrder, OrderResponceDTO.class);
+                if (existingOrder.getOrderItems() != null) {
+                    existingOrder.getOrderItems().forEach(item -> existingDto.getOrderItems().add(modelMapper.map(item, OrderItemDTO.class)));
+                }
+                existingDto.setAddressId(existingOrder.getAddress() != null ? existingOrder.getAddress().getAddressId() : addressId);
+                return existingDto;
+            }
         }
-        Address address= addressRepo.findById(addressId).orElseThrow(
-                                            ()->new ResourceNotFoundException("Address","id",addressId));
 
-        //Create a new order with payment info
+        // Getting User Cart
+        Cart cart = cartRepository.findCartByEmail(emailId);
+        if (cart == null) {
+            throw new ResourceNotFoundException("Cart", "emailId", emailId);
+        }
+        Address address = addressRepo.findById(addressId).orElseThrow(
+                () -> new ResourceNotFoundException("Address", "id", addressId));
+
+        List<CartItem> cartItems = cart.getCartItems();
+        if (cartItems.isEmpty()) {
+            throw new APIException("Cart is empty");
+        }
+
+        // Server-Side Payment Verification
+        if ("CARD".equalsIgnoreCase(paymentMethod) || "STRIPE".equalsIgnoreCase(paymentMethod)) {
+            if (pgPaymentId == null || !pgPaymentId.startsWith("pi_")) {
+                throw new APIException("Invalid payment identifier. A confirmed Stripe PaymentIntent ID is required.");
+            }
+
+            try {
+                PaymentIntent intent = stripeService.retrievePaymentIntent(pgPaymentId);
+                if (!"succeeded".equalsIgnoreCase(intent.getStatus())) {
+                    throw new APIException("Payment not confirmed. Current Stripe status: " + intent.getStatus());
+                }
+                pgStatus = "Completed";
+                pgName = "Stripe";
+                pgResponseMessage = "Payment verified successfully with Stripe";
+            } catch (StripeException e) {
+                throw new APIException("Stripe payment verification failed: " + e.getMessage());
+            }
+        } else if ("COD".equalsIgnoreCase(paymentMethod)) {
+            pgStatus = "Pending";
+            pgName = "Cash on Delivery";
+            pgResponseMessage = "Order placed via Cash on Delivery";
+            if (pgPaymentId == null || pgPaymentId.isBlank()) {
+                pgPaymentId = "COD_" + System.currentTimeMillis();
+            }
+        } else if ("UPI".equalsIgnoreCase(paymentMethod)) {
+            if (pgPaymentId == null || pgPaymentId.isBlank()) {
+                pgPaymentId = "UPI_" + System.currentTimeMillis();
+            }
+            pgStatus = "Pending";
+            if (pgName == null || pgName.isBlank()) {
+                pgName = "UPI";
+            }
+            pgResponseMessage = "UPI payment initiated. Order registered successfully.";
+        } else {
+            throw new APIException("Unsupported payment method: " + paymentMethod + ". Allowed methods: COD, UPI, CARD.");
+        }
+
+        // Create a new order with verified payment info
         Order order = new Order();
         order.setEmail(emailId);
         order.setOrderDate(LocalDate.now());
@@ -71,7 +133,6 @@ public class OrderServiceimpl implements OrderService {
         Order savedOrder = orderRepo.save(order);
 
         //Get Items form the cart into the order item
-        List<CartItem> cartItems = cart.getCartItems();
         if (cartItems.isEmpty()) {
             throw new APIException("Cart is empty");
         }
@@ -90,7 +151,8 @@ public class OrderServiceimpl implements OrderService {
         orderItems = orderItemRepo.saveAll(orderItems);
 
         //Update the stock:-such that we have to reduce the product quantity availabe in stocks
-        cart.getCartItems().forEach(item -> {
+        List<CartItem> cartItemsCopy = new ArrayList<>(cart.getCartItems());
+        cartItemsCopy.forEach(item -> {
             int quantity = item.getQuantity();
             Product product = item.getProduct();
             // Reduce stock quantity
@@ -106,7 +168,9 @@ public class OrderServiceimpl implements OrderService {
 
         //Send back the order summary
         OrderResponceDTO orderDTO = modelMapper.map(savedOrder, OrderResponceDTO.class);
-        orderItems.forEach(item -> orderDTO.getOrderItems().add(modelMapper.map(item, OrderItemDTO.class)));
+        List<OrderItemDTO> orderItemDTOList = new ArrayList<>();
+        orderItems.forEach(item -> orderItemDTOList.add(modelMapper.map(item, OrderItemDTO.class)));
+        orderDTO.setOrderItems(orderItemDTOList);
 
         orderDTO.setAddressId(addressId);
 

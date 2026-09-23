@@ -1,0 +1,45 @@
+# Dependencies & Build artifacts
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+target/
+**/target/
+*.class
+
+# IDE & Editor
+.idea/
+**/.idea/
+.vscode/
+**/.vscode/
+*.iml
+.classpath
+.project
+.settings/
+
+# Environment & Secrets
+.env
+**/.env
+*.local
+
+# Logs
+*.log
+logs/
+
+# Operating System
+.DS_Store
+Thumbs.db
+
+# Project uploads / dynamic files
+images/
+**/images/
+{project.file}/
+**/{project.file}/
+
+# Local temporary/study materials
+sb-ecom/
+.postman/
+postman/
+React/
+untitled/
+*.pdf
