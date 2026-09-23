@@ -8,6 +8,17 @@ const PaymentForm = ({ clientSecret, totalPrice, onSuccess }) => {
   const elements = useElements();
   const [errorMessage, setErrorMessage] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isElementReady, setIsElementReady] = useState(false);
+  const [loadTimeout, setLoadTimeout] = useState(false);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!isElementReady) {
+        setLoadTimeout(true);
+      }
+    }, 9000);
+    return () => clearTimeout(timer);
+  }, [isElementReady]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -60,7 +71,7 @@ const PaymentForm = ({ clientSecret, totalPrice, onSuccess }) => {
     layout: 'tabs',
   };
 
-  const isLoading = !clientSecret || !stripe || !elements;
+  const showSkeleton = !clientSecret || !isElementReady;
 
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-lg mx-auto p-5 sm:p-6 bg-white border border-[#E8E2D6] rounded-2xl shadow-xs">
@@ -81,8 +92,7 @@ const PaymentForm = ({ clientSecret, totalPrice, onSuccess }) => {
         </div>
       </div>
 
-      {isLoading ? (
-        /* Modern Tailwind Skeleton Loader without external MUI dependency */
+      {showSkeleton && (
         <div className="space-y-4 py-2 animate-pulse">
           <div className="flex gap-2">
             <div className="h-10 bg-gray-100 rounded-lg flex-1"></div>
@@ -95,47 +105,65 @@ const PaymentForm = ({ clientSecret, totalPrice, onSuccess }) => {
           </div>
           <div className="h-11 bg-gray-200 rounded-lg w-full mt-4"></div>
         </div>
-      ) : (
-        <>
-          {clientSecret && (
-            <div className="mb-4">
-              <PaymentElement id="payment-element" options={paymentElementOptions} />
-            </div>
-          )}
-
-          {errorMessage && (
-            <div className="flex items-start gap-2 p-3 my-3 text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg animate-in fade-in duration-200">
-              <AlertCircle size={16} className="shrink-0 mt-0.5 text-red-600" />
-              <span>{errorMessage}</span>
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={!stripe || isLoading || isProcessing}
-            className="w-full mt-4 px-6 py-3 bg-[#FFD814] hover:bg-[#F7CA00] active:scale-[0.99] border border-[#FCD200] text-[#0F1111] font-bold text-sm rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-          >
-            {isProcessing ? (
-              <>
-                <Loader2 size={18} className="animate-spin text-gray-800" />
-                <span>Processing Payment...</span>
-              </>
-            ) : (
-              <>
-                <Lock size={16} />
-                <span>
-                  Pay {totalPrice != null ? formatPrice(totalPrice) : 'Now'}
-                </span>
-              </>
-            )}
-          </button>
-
-          <p className="text-[11px] text-center text-gray-500 mt-3 flex items-center justify-center gap-1.5">
-            <ShieldCheck size={13} className="text-emerald-600" />
-            Guaranteed safe & secure checkout powered by Stripe
-          </p>
-        </>
       )}
+
+      {loadTimeout && !isElementReady && (
+        <div className="p-3 my-3 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg">
+          <p className="font-semibold mb-1">Stripe card input is taking time to connect.</p>
+          <p className="text-[11px] text-amber-700">Please check your internet connection or reload the page.</p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="mt-2 text-xs font-bold text-amber-900 underline"
+          >
+            Reload Checkout
+          </button>
+        </div>
+      )}
+
+      <div className={!isElementReady ? 'hidden' : 'block'}>
+        {clientSecret && (
+          <div className="mb-4">
+            <PaymentElement
+              id="payment-element"
+              options={paymentElementOptions}
+              onReady={() => setIsElementReady(true)}
+            />
+          </div>
+        )}
+
+        {errorMessage && (
+          <div className="flex items-start gap-2 p-3 my-3 text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg animate-in fade-in duration-200">
+            <AlertCircle size={16} className="shrink-0 mt-0.5 text-red-600" />
+            <span>{errorMessage}</span>
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={!stripe || !isElementReady || isProcessing}
+          className="w-full mt-4 px-6 py-3 bg-[#FFD814] hover:bg-[#F7CA00] active:scale-[0.99] border border-[#FCD200] text-[#0F1111] font-bold text-sm rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+        >
+          {isProcessing ? (
+            <>
+              <Loader2 size={18} className="animate-spin text-gray-800" />
+              <span>Processing Payment...</span>
+            </>
+          ) : (
+            <>
+              <Lock size={16} />
+              <span>
+                Pay {totalPrice != null ? formatPrice(totalPrice) : 'Now'}
+              </span>
+            </>
+          )}
+        </button>
+
+        <p className="text-[11px] text-center text-gray-500 mt-3 flex items-center justify-center gap-1.5">
+          <ShieldCheck size={13} className="text-emerald-600" />
+          Guaranteed safe & secure checkout powered by Stripe
+        </p>
+      </div>
     </form>
   );
 };

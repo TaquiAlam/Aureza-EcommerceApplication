@@ -34,7 +34,11 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import toast from 'react-hot-toast';
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
+const stripePublishableKey =
+  import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ||
+  'pk_test_51UITYQEMWUyH4DwbhwFxDKSqG5dJb16qy35NVjoayLlTWg9eF4cBH7ifKcjeQ4rcX5VowfR5zgFJKe6wWyqqtAo300mJvxomYJ';
+
+const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
 
 export default function CheckoutPage() {
   const { user, profile } = useAuth();
