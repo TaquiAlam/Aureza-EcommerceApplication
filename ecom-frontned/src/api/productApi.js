@@ -10,9 +10,13 @@ export const getAllProducts = (
 ) => {
   if (typeof pageNumber === 'object' && pageNumber !== null) {
     const opts = pageNumber;
+    const pNum = opts.pageNumber ?? 0;
+    const pSize = opts.pageSize ?? 10;
     const params = {
-      pageNumber: opts.pageNumber ?? 0,
-      pageSize: opts.pageSize ?? 10,
+      pageNumber: pNum,
+      pageSize: pSize,
+      PageNumber: pNum,
+      PageSize: pSize,
       sortBy: opts.sortBy ?? 'productId',
       sortOrder: opts.sortOrder ?? 'asc',
     };
@@ -21,28 +25,75 @@ export const getAllProducts = (
     return api.get('/public/products', { params });
   }
 
-  const params = { pageNumber, pageSize, sortBy, sortOrder };
+  const params = { 
+    pageNumber, 
+    pageSize, 
+    PageNumber: pageNumber,
+    PageSize: pageSize,
+    sortBy, 
+    sortOrder 
+  };
   if (keyword && String(keyword).trim()) params.keyword = String(keyword).trim();
   if (category && category !== 'All') params.category = category;
 
   return api.get('/public/products', { params });
 };
 
+export const parseProductsResponse = (resData) => {
+  const root = resData || {};
+  const rawList = root?.content || root?.Content || (Array.isArray(root) ? root : []);
+  const normalizedList = Array.isArray(rawList)
+    ? rawList.map(prod => ({
+        ...prod,
+        productId: prod.productId ?? prod.id,
+        productName: prod.productName ?? prod.name ?? '',
+        description: prod.productDescription ?? prod.description ?? '',
+        productDescription: prod.productDescription ?? prod.description ?? '',
+        quantity: prod.quantity ?? prod.productQuantity ?? 0,
+        price: prod.price ?? 0,
+        specialPrice: prod.specialPrice ?? prod.price ?? 0,
+        discount: prod.discount ?? 0,
+        image: prod.image ?? 'default.png'
+      }))
+    : [];
+
+  return {
+    content: normalizedList,
+    totalPages: root?.totalPages ?? 1,
+    totalElements: root?.totalElements ?? normalizedList.length,
+    pageNumber: root?.Page_Number ?? root?.pageNumber ?? 0,
+    pageSize: root?.Page_Size ?? root?.pageSize ?? normalizedList.length,
+    lastPage: root?.lastPage ?? true
+  };
+};
+
 export const getProductsByCategory = (categoryId, pageNumber = 0, pageSize = 10, sortBy = 'productId', sortOrder = 'asc') =>
   api.get(`/public/categories/${categoryId}/products`, {
-    params: { pageNumber, pageSize, sortBy, sortOrder }
+    params: { pageNumber, pageSize, PageNumber: pageNumber, PageSize: pageSize, sortBy, sortOrder }
   });
 
 export const searchProducts = (keyword, pageNumber = 0, pageSize = 10, sortBy = 'productId', sortOrder = 'asc') =>
   api.get(`/public/products/keyword/${keyword}`, {
-    params: { pageNumber, pageSize, sortBy, sortOrder }
+    params: { pageNumber, pageSize, PageNumber: pageNumber, PageSize: pageSize, sortBy, sortOrder }
   });
 
-export const addProduct = (categoryId, productData) =>
-  api.post(`/admin/categories/${categoryId}/product`, productData);
+export const addProduct = (categoryId, productData) => {
+  const payload = {
+    ...productData,
+    productDescription: productData.productDescription || productData.description || 'Quality product from Aureza',
+    quantity: Number(productData.quantity || productData.productQuantity || 0)
+  };
+  return api.post(`/admin/categories/${categoryId}/product`, payload);
+};
 
-export const updateProduct = (productId, productData) =>
-  api.put(`/admin/products/${productId}`, productData);
+export const updateProduct = (productId, productData) => {
+  const payload = {
+    ...productData,
+    productDescription: productData.productDescription || productData.description || 'Quality product from Aureza',
+    quantity: Number(productData.quantity || productData.productQuantity || 0)
+  };
+  return api.put(`/admin/products/${productId}`, payload);
+};
 
 export const deleteProduct = (productId) =>
   api.delete(`/admin/products/${productId}`);

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { RotateCcw, ArrowUp, ArrowDown, ChevronDown } from 'lucide-react';
-import { getAllProducts } from '../api/productApi';
-import { getAllCategories } from '../api/categoryApi';
+import { getAllProducts, parseProductsResponse } from '../api/productApi';
+import { getAllCategories, parseCategoriesResponse } from '../api/categoryApi';
 import ProductGrid from '../components/organisms/ProductGrid';
 import SearchBar from '../components/molecules/SearchBar';
 import Pagination from '../components/molecules/Pagination';
@@ -27,12 +27,9 @@ export default function ProductsPage() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await getAllCategories(0, 50);
-        const catData = res.data;
-        const cats = Array.isArray(catData)
-          ? catData.flatMap(c => c.content || c.Content || [c])
-          : catData.content || catData.Content || [];
-        setCategories(cats.filter(c => c.categoryName));
+        const res = await getAllCategories(0, 100);
+        const parsed = parseCategoriesResponse(res.data);
+        setCategories(parsed.content.filter(c => c.categoryName));
       } catch {
         // Fallback default categories if server is not active
         setCategories([
@@ -63,14 +60,15 @@ export default function ProductsPage() {
         const deals = searchParams.get('deals');
 
         const res = await getAllProducts(pageNumber, pageSize, sortBy, sortOrder, search, category);
+        const parsed = parseProductsResponse(res.data);
 
-        let list = res?.data?.content || [];
+        let list = parsed.content;
         if (deals === 'true') {
           list = list.filter(p => p.discount > 0).sort((a, b) => b.discount - a.discount);
         }
         setProducts(list);
-        setTotalPages(res?.data?.totalPages || 1);
-        setTotalElements(res?.data?.totalElements || list.length);
+        setTotalPages(parsed.totalPages);
+        setTotalElements(parsed.totalElements);
       } catch (err) {
         handleError(err, 'Failed to load products', { silent: true });
         const categoryParam = searchParams.get('category')?.toLowerCase();

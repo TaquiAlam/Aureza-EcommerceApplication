@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ShoppingCart, User, LogOut, Menu, X, Search, MapPin, ChevronDown, LayoutDashboard, Sparkles } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useCart } from '../../hooks/useCart';
-import { getAllCategories } from '../../api/categoryApi';
+import { getAllCategories, parseCategoriesResponse } from '../../api/categoryApi';
 import { getUserAddresses } from '../../api/addressApi';
 
 export default function Navbar() {
@@ -22,12 +22,9 @@ export default function Navbar() {
   useEffect(() => {
     const fetchCats = async () => {
       try {
-        const res = await getAllCategories(0, 30);
-        const catData = res.data;
-        const cats = Array.isArray(catData)
-          ? catData.flatMap(c => c.content || c.Content || [c])
-          : catData.content || catData.Content || [];
-        setCategories(cats.filter(c => c.categoryName));
+        const res = await getAllCategories(0, 100);
+        const parsed = parseCategoriesResponse(res.data);
+        setCategories(parsed.content.filter(c => c.categoryName));
       } catch {
         // ignore
       }
