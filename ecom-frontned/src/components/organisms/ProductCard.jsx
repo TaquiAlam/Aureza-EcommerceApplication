@@ -1,6 +1,7 @@
 import { ShoppingCart, Star, Check } from 'lucide-react';
 import { useCart } from '../../hooks/useCart';
 import { formatPrice, formatDiscount } from '../../utils/formatPrice';
+import { getProductImageUrl } from '../../utils/imageUtils';
 
 export default function ProductCard({ product }) {
   const { addToCart } = useCart();
@@ -10,9 +11,7 @@ export default function ProductCard({ product }) {
   const isOutOfStock = product.quantity !== undefined && product.quantity === 0;
   const isLowStock = product.quantity !== undefined && product.quantity > 0 && product.quantity <= 5;
   
-  const imageUrl = product.image
-    ? (product.image.startsWith('http') ? product.image : `/images/${product.image}`)
-    : `https://picsum.photos/seed/${product.productId}/400/300`;
+  const imageUrl = getProductImageUrl(product.image, product.productId);
 
   const handleAddToCart = (e) => {
     e.stopPropagation();

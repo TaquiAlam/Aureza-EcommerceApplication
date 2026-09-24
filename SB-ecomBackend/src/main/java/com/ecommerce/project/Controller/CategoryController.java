@@ -24,7 +24,7 @@ public class CategoryController {
 
     //Dekho bhai ab hm finally pagination implement krne ja rhe hai ..hme user se PageNumber,PageSize chahiye..yhen uske
     //baad hm jaenge service class mai and use of Pagable interface we can retrive data form data base according to our needs
-    @GetMapping("/public/categories")
+    @GetMapping({"/public/categories", "/admin/categories"})
     public ResponseEntity<List<CategoryResponseDTO>> getCategories(@RequestParam (name="PageNumber",defaultValue =AppConst.Page_Number,required=false)Integer PageNumber,
                                                                    @RequestParam(name="PageSize",defaultValue = AppConst.Page_Size,required=false) Integer PageSize,
                                                                    @RequestParam (name="sortbyID",defaultValue =AppConst.SortbyID,required=false)String sortbyID,
@@ -35,7 +35,7 @@ public class CategoryController {
     //request variable is used to mapp static variable of url
     //@Valid Annotation:- it gives user friendly error message when you give some error by passing a value
     //like you left blank the category section
-    @PostMapping("/public/categories")
+    @PostMapping({"/admin/categories", "/public/categories"})
     public ResponseEntity<CategoryRequestDTO> addCategory(@Valid @RequestBody CategoryRequestDTO categoryRequestDTO) {
        CategoryRequestDTO savedCategoryDTO= categoryService.createCategory(categoryRequestDTO);
         return new ResponseEntity<>(savedCategoryDTO, HttpStatus.CREATED);
@@ -50,7 +50,7 @@ public class CategoryController {
 
 
     }
-    @PutMapping("/public/categories/{categoryId}")
+    @PutMapping({"/admin/categories/{categoryId}", "/public/categories/{categoryId}"})
     public ResponseEntity<CategoryRequestDTO> updateCategory(@RequestBody CategoryRequestDTO categoryRequestDTO,
                                                   @PathVariable  Long categoryId ) {
 

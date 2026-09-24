@@ -5,6 +5,10 @@
       "destination": "https://aureza-backend.onrender.com/api/$1"
     },
     {
+      "source": "/images/(.*)",
+      "destination": "https://aureza-backend.onrender.com/images/$1"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

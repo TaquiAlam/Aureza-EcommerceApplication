@@ -1,6 +1,7 @@
 import { Trash2, AlertCircle } from 'lucide-react';
 import QuantityControl from '../molecules/QuantityControl';
 import { formatPrice } from '../../utils/formatPrice';
+import { getProductImageUrl } from '../../utils/imageUtils';
 
 /**
  * CartItem — Organism rendering a single cart product row.
@@ -13,11 +14,7 @@ export default function CartItem({ product, onUpdateQuantity, onRemove }) {
     product.productQuantity !== null &&
     product.quantity >= product.productQuantity;
 
-  const imageUrl = product.image
-    ? product.image.startsWith('http')
-      ? product.image
-      : `/images/${product.image}`
-    : `https://picsum.photos/seed/${product.productId}/200/200`;
+  const imageUrl = getProductImageUrl(product.image, product.productId);
 
   return (
     <div className="bg-white border border-[#E8E2D6] rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row gap-5 shadow-xs hover:border-gray-300 transition-colors">

@@ -45,6 +45,9 @@ public class ProductServiceimpl implements ProductService {
     private CategoryRepo categoryRepo;
 
     @Autowired
+    private com.ecommerce.project.Repositories.OrderItemRepo orderItemRepo;
+
+    @Autowired
     private FileService fileService;
 
     @Autowired
@@ -61,10 +64,12 @@ public class ProductServiceimpl implements ProductService {
 
         boolean isProductNotPresent=true;
         List<Product> products = categoryModel.getProducts();
-        for (Product value : products) {
-            if (value.getProductName().equals(productRequestDTO.getProductName())) {
-                isProductNotPresent = false;
-                break;
+        if (products != null) {
+            for (Product value : products) {
+                if (value.getProductName() != null && value.getProductName().equalsIgnoreCase(productRequestDTO.getProductName())) {
+                    isProductNotPresent = false;
+                    break;
+                }
             }
         }
 
@@ -72,6 +77,11 @@ public class ProductServiceimpl implements ProductService {
             Product product = modelMapper.map(productRequestDTO, Product.class);
             product.setImage("default.png");
             product.setCategory(categoryModel);
+            if (product.getProductDescription() == null || product.getProductDescription().trim().length() < 6) {
+                product.setProductDescription(productRequestDTO.getProductDescription() != null && productRequestDTO.getProductDescription().trim().length() >= 6
+                        ? productRequestDTO.getProductDescription()
+                        : "Quality product from Aureza store");
+            }
             double specialPrice = product.getPrice() -
                     ((product.getDiscount() * 0.01) * product.getPrice());
             product.setSpecialPrice(specialPrice);
@@ -225,22 +235,23 @@ public class ProductServiceimpl implements ProductService {
 
     }
 
+    @jakarta.transaction.Transactional
     @Override
     public ProductRequestDTO deleteproduct(Long productId){
-        Product product=productRepo.findById(productId)
-                .orElseThrow(() -> new ResourceNotFoundException("Product", "product_Id",productId));
-       productRepo.delete(product);
+        Product product = productRepo.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product", "product_Id", productId));
 
-        // DELETE
-        //Dekho bhai hmne cart banaya usme products ko add kiya but what happend ki product update ya delete ho jae
-        //to cart ko bhi updated result deikhana hoga...
+        // 1. Disassociate from OrderItems so order history is preserved and FK constraint is not violated
+        orderItemRepo.disassociateProduct(productId);
+
+        // 2. Remove product from carts
         List<Cart> carts = cartRepository.findCartBYProductId(productId);
         carts.forEach(cart -> cartService.deleteProductFromCart(cart.getCartId(), productId));
 
+        // 3. Delete product from database
         productRepo.delete(product);
 
-
-       return modelMapper.map(product,ProductRequestDTO.class);
+        return modelMapper.map(product, ProductRequestDTO.class);
     }
 
     @Override

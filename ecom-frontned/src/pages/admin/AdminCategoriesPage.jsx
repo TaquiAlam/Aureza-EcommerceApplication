@@ -58,27 +58,47 @@ export default function AdminCategoriesPage() {
 
   const handleAdd = async (e) => {
     e.preventDefault();
-    if (!newCategoryName.trim()) return;
+    const trimmed = newCategoryName.trim();
+    if (!trimmed) return;
+    if (trimmed.length < 2) {
+      toast.error('Category name must be at least 2 characters');
+      return;
+    }
     try {
-      await createCategory({ categoryName: newCategoryName.trim() });
+      await createCategory({ categoryName: trimmed });
       toast.success('Category created successfully');
       setNewCategoryName('');
       setIsAdding(false);
       fetchCategoryList();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to create category');
+      const errorMsg =
+        err.response?.data?.message ||
+        err.response?.data?.categoryName ||
+        (typeof err.response?.data === 'string' ? err.response?.data : null) ||
+        'Failed to create category';
+      toast.error(errorMsg);
     }
   };
 
   const handleUpdate = async (id) => {
-    if (!editCategoryName.trim()) return;
+    const trimmed = editCategoryName.trim();
+    if (!trimmed) return;
+    if (trimmed.length < 2) {
+      toast.error('Category name must be at least 2 characters');
+      return;
+    }
     try {
-      await updateCategory(id, { categoryName: editCategoryName.trim() });
+      await updateCategory(id, { categoryName: trimmed });
       toast.success('Category updated');
       setEditingId(null);
       fetchCategoryList();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to update category');
+      const errorMsg =
+        err.response?.data?.message ||
+        err.response?.data?.categoryName ||
+        (typeof err.response?.data === 'string' ? err.response?.data : null) ||
+        'Failed to update category';
+      toast.error(errorMsg);
     }
   };
 

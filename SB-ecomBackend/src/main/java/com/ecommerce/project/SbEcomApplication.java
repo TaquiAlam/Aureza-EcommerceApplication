@@ -23,8 +23,16 @@ public class SbEcomApplication {
 	}
 
     @Bean
-    public CommandLineRunner initData(RoleRepo roleRepo, CategoryRepo categoryRepo, ProductRepo productRepo) {
+    public CommandLineRunner initData(RoleRepo roleRepo, CategoryRepo categoryRepo, ProductRepo productRepo, org.springframework.jdbc.core.JdbcTemplate jdbcTemplate) {
         return args -> {
+            // Automatically resync postgres sequences to MAX(id) on startup to prevent duplicate key errors
+            try {
+                jdbcTemplate.execute("SELECT setval(pg_get_serial_sequence('category_model', 'id'), (SELECT COALESCE(MAX(id), 0) + 1 FROM category_model), false)");
+                jdbcTemplate.execute("SELECT setval(pg_get_serial_sequence('products', 'product_id'), (SELECT COALESCE(MAX(product_id), 0) + 1 FROM products), false)");
+            } catch (Exception ignored) {
+                // Safe ignore if database is not postgres or sequence is not yet created
+            }
+
             // 1. Seed Roles
             if (roleRepo.findByRoleName(AppRole.ROLE_USER).isEmpty()) {
                 roleRepo.save(new Role(AppRole.ROLE_USER));

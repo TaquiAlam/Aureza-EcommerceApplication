@@ -42,10 +42,10 @@ export const parseCategoriesResponse = (resData) => {
 };
 
 export const createCategory = (categoryData) =>
-  api.post('/public/categories', categoryData);
+  api.post('/admin/categories', categoryData);
 
 export const updateCategory = (categoryId, categoryData) =>
-  api.put(`/public/categories/${categoryId}`, categoryData);
+  api.put(`/admin/categories/${categoryId}`, categoryData);
 
 export const deleteCategory = (categoryId) =>
   api.delete(`/admin/categories/${categoryId}`);

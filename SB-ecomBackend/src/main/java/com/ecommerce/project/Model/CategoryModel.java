@@ -15,9 +15,9 @@ public class CategoryModel {
     private Long id;
 
     @NotBlank
-    @Size(min= 5 , message = "Please Enter more than 5 charecters")
+    @Size(min = 2, message = "Category name must contain at least 2 characters")
     private String categoryName;
 
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
-    private List<Product> products;
+    private List<Product> products = new java.util.ArrayList<>();
 }

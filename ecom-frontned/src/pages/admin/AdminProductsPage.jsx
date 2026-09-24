@@ -23,6 +23,7 @@ import {
 } from '../../api/productApi';
 import { getAllCategories, parseCategoriesResponse } from '../../api/categoryApi';
 import { formatPrice } from '../../utils/formatPrice';
+import { getProductImageUrl } from '../../utils/imageUtils';
 import Pagination from '../../components/molecules/Pagination';
 import toast from 'react-hot-toast';
 
@@ -171,10 +172,10 @@ export default function AdminProductsPage() {
     if (window.confirm(`Are you sure you want to delete "${name}"?`)) {
       try {
         await deleteProduct(id);
-        toast.success('Product deleted');
+        toast.success('Product deleted successfully');
         fetchProductList();
-      } catch {
-        toast.error('Failed to delete product');
+      } catch (err) {
+        toast.error(err.response?.data?.message || 'Failed to delete product');
       }
     }
   };
@@ -184,18 +185,16 @@ export default function AdminProductsPage() {
     if (!file) return;
     try {
       await updateProductImage(productId, file);
-      toast.success('Product image updated');
+      toast.success('Product image updated successfully');
       fetchProductList();
-    } catch {
-      toast.error('Failed to upload image');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to upload image');
     }
   };
 
-  const resolveImageUrl = (img) => {
+  const resolveImageUrl = (img, productId) => {
     if (!img || img === 'default.png') return null;
-    if (img.startsWith('http://') || img.startsWith('https://')) return img;
-    const apiUrl = import.meta.env.VITE_API_URL || '';
-    return `${apiUrl}/images/${img}`;
+    return getProductImageUrl(img, productId);
   };
 
   const startIndex = pageNumber * pageSize + 1;
@@ -324,6 +323,11 @@ export default function AdminProductsPage() {
                 <option key={c.categoryId} value={c.categoryId}>{c.categoryName}</option>
               ))}
             </select>
+            {categories.length === 0 && (
+              <p className="text-[11px] text-amber-600 mt-1 font-semibold">
+                ⚠️ No categories exist. Please create a category first in the Categories section.
+              </p>
+            )}
           </div>
 
           <div className="md:col-span-2 flex justify-end gap-2 pt-2 border-t border-[#F0EBE1]">
@@ -451,7 +455,7 @@ export default function AdminProductsPage() {
                   </tr>
                 ) : (
                   products.map((product) => {
-                    const imgUrl = resolveImageUrl(product.image);
+                    const imgUrl = resolveImageUrl(product.image, product.productId);
                     return (
                       <tr key={product.productId} className="hover:bg-[#FAF7F2]/50 transition-colors">
                         <td className="py-3.5 px-4">

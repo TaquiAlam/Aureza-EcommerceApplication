@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, Zap, ShoppingBag, ShieldCheck, Truck, Clock,
 import { getAllProducts } from '../api/productApi';
 import { getAllCategories } from '../api/categoryApi';
 import { formatPrice } from '../utils/formatPrice';
+import { getProductImageUrl } from '../utils/imageUtils';
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -324,9 +325,12 @@ export default function HomePage() {
               >
                 <div className="h-36 w-full flex items-center justify-center bg-white rounded-md p-2 mb-3">
                   <img
-                    src={item.image ? (item.image.startsWith('http') ? item.image : `/images/${item.image}`) : `https://picsum.photos/seed/${item.productId}/200/200`}
+                    src={getProductImageUrl(item.image, item.productId)}
                     alt={item.productName}
                     className="max-h-full max-w-full object-contain"
+                    onError={(e) => {
+                      e.target.src = `https://picsum.photos/seed/${item.productId}/200/200`;
+                    }}
                   />
                 </div>
 

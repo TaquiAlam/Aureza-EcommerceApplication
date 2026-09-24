@@ -28,6 +28,7 @@ import { useCart } from '../hooks/useCart';
 import { getUserAddresses, createAddress } from '../api/addressApi';
 import { placeOrder, createStripeClientSecret } from '../api/orderApi';
 import { formatPrice } from '../utils/formatPrice';
+import { getProductImageUrl } from '../utils/imageUtils';
 import CheckoutStepper from '../components/organisms/CheckoutStepper';
 import PaymentForm from '../components/organisms/PaymentForm';
 import { loadStripe } from '@stripe/stripe-js';
@@ -473,7 +474,7 @@ export default function CheckoutPage() {
                       {products.map((p) => (
                         <div key={p.productId} className="flex items-center gap-3 bg-white p-2.5 rounded-lg border border-gray-200">
                           <img
-                            src={p.image?.startsWith('http') ? p.image : `/images/${p.image}`}
+                            src={getProductImageUrl(p.image, p.productId)}
                             alt={p.productName}
                             className="w-12 h-12 object-contain bg-[#FAF7F2] rounded border border-gray-200 p-1 shrink-0"
                             onError={(e) => { e.target.src = 'https://picsum.photos/seed/fallback/100/100'; }}
@@ -839,7 +840,7 @@ export default function CheckoutPage() {
                   </h3>
                   <div className="flex flex-col gap-3 max-h-72 overflow-y-auto pr-1">
                     {products.map((p) => {
-                      const img = p.image?.startsWith('http') ? p.image : `/images/${p.image}`;
+                      const img = getProductImageUrl(p.image, p.productId);
                       return (
                         <div key={p.productId} className="flex items-center justify-between gap-4 p-3 bg-[#FAF7F2] border border-[#E8E2D6] rounded-xl">
                           <div className="flex items-center gap-3">
