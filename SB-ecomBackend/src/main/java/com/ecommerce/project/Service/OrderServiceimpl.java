@@ -176,4 +176,25 @@ public class OrderServiceimpl implements OrderService {
 
         return orderDTO;
     }
+
+     @Override
+    public adminOrderResponce getAllOrders(Integer pageNumber, Integer pageSize, String sortbyID, String sortASDs) {
+        Sort sortByAndOrder = sortASDs.equalsIgnoreCase("asc")
+                ? Sort.by(sortbyID).ascending()
+                : Sort.by(sortbyID).descending();
+        Pageable pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
+        Page<Order> pageOrders = orderRepo.findAll(pageDetails);
+        List<Order> orders = pageOrders.getContent();
+        List<OrderResponceDTO> orderDTOs = orders.stream()
+                .map(order -> modelMapper.map(order, OrderResponceDTO.class))
+                .toList();
+        adminOrderResponce orderResponse = new adminOrderResponce();
+        orderResponse.setContents(orderDTOs);
+        orderResponse.setPageNumber(pageOrders.getNumber());
+        orderResponse.setPageSize(pageOrders.getSize());
+        orderResponse.setTotalElements(pageOrders.getTotalElements());
+        orderResponse.setTotalPages(pageOrders.getTotalPages());
+        orderResponse.setLastPage(pageOrders.isLast());
+        return orderResponse;
+    }
 }

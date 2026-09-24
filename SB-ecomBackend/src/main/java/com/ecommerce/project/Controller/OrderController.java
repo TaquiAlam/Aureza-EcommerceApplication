@@ -50,4 +50,16 @@ public class OrderController {
         return new ResponseEntity<>(paymentIntent.getClientSecret(), HttpStatus.CREATED);
     }
 
+    @GetMapping("/admin/orders")
+    public ResponseEntity<adminOrderResponce> getAllOrders(@RequestParam (name="PageNumber",defaultValue = AppConst.Page_Number,required=false)Integer PageNumber,
+                                                           @RequestParam(name="PageSize",defaultValue = AppConst.Page_Size,required=false) Integer PageSize,
+                                                           @RequestParam (name="sortbyID",defaultValue =AppConst.SORT_ORDERS_BY,required=false)String sortbyID,
+                                                           @RequestParam (name="sortAS_DS",defaultValue =AppConst.SortBY,required=false)String sortAS_DS)
+    {
+                  adminOrderResponce OrderResponce = orderService.getAllOrders(PageNumber,PageSize,sortbyID,sortAS_DS);
+                   return new ResponseEntity<adminOrderResponce>(OrderResponce, HttpStatus.OK);
+
+
+    }
+
 }

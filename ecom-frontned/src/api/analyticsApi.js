@@ -1,5 +1,10 @@
 import api from './axiosConfig';
 
 export const getAnalytics = async () => {
-  return await api.get('/api/admin/analytics');
+  try {
+    return await api.get('/admin/app/analytics');
+  } catch {
+    return await api.get('/admin/analytics');
+  }
 };
+  

@@ -19,7 +19,8 @@ export default function AdminOrdersPage() {
       setLoading(true);
       setIsApiPending(false);
       const res = await getAllOrders();
-      setOrders(res.data?.content || res.data || []);
+      const orderList = res.data?.contents || res.data?.content || (Array.isArray(res.data) ? res.data : []);
+      setOrders(orderList);
     } catch (err) {
       if (err.response?.status === 404) {
         setIsApiPending(true);

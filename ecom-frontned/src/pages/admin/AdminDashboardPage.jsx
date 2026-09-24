@@ -3,7 +3,7 @@ import { Package, ShoppingCart, DollarSign, Tags, Loader2, ArrowUpRight, Trendin
 import { getAnalytics } from '../../api/analyticsApi';
 import { getAllProducts } from '../../api/productApi';
 import { getAllCategories } from '../../api/categoryApi';
-import { formatPrice } from '../../utils/formatPrice';
+import { formatPrice, formatCurrency } from '../../utils/formatPrice';
 import { Link } from 'react-router-dom';
 
 export default function AdminDashboardPage() {
@@ -22,42 +22,40 @@ export default function AdminDashboardPage() {
   const fetchAnalyticsData = async () => {
     try {
       setLoading(true);
-      // Attempt to fetch from analytics API
       let productCount = 0;
       let categoryCount = 0;
       let totalOrders = 0;
       let totalRevenue = 0;
 
+      // 1. Primary: Fetch from new Analytics API (/api/admin/app/analytics)
       try {
         const res = await getAnalytics();
         if (res.data) {
-          productCount = res.data.productCount ?? 0;
-          totalOrders = res.data.totalOrders ?? 0;
-          totalRevenue = res.data.totalRevenue ?? 0;
-          categoryCount = res.data.categoryCount ?? 0;
+          productCount = Number(res.data.productCount || 0);
+          totalOrders = Number(res.data.totalOrders || 0);
+          totalRevenue = Number(res.data.totalRevenue || 0);
         }
       } catch {
-        // Fallback: Calculate live from products and categories APIs
+        // Fallback: Fetch product count if analytics endpoint fails
         try {
-          const [prodRes, catRes] = await Promise.allSettled([
-            getAllProducts(0, 1),
-            getAllCategories(0, 1)
-          ]);
-
-          if (prodRes.status === 'fulfilled') {
-            productCount = prodRes.value.data?.totalElements ?? prodRes.value.data?.content?.length ?? 0;
-          }
-          if (catRes.status === 'fulfilled') {
-            const raw = catRes.value.data;
-            if (Array.isArray(raw)) {
-              categoryCount = raw[0]?.totalElements ?? raw[0]?.content?.length ?? raw.length;
-            } else {
-              categoryCount = raw?.totalElements ?? raw?.content?.length ?? 0;
-            }
-          }
+          const prodRes = await getAllProducts(0, 1);
+          productCount = prodRes.data?.totalElements ?? prodRes.data?.content?.length ?? 0;
         } catch {
           // ignore fallback error
         }
+      }
+
+      // 2. Fetch category count for catalog badge
+      try {
+        const catRes = await getAllCategories(0, 1);
+        const raw = catRes.data;
+        if (Array.isArray(raw)) {
+          categoryCount = raw[0]?.totalElements ?? raw[0]?.content?.length ?? raw.length;
+        } else {
+          categoryCount = raw?.totalElements ?? raw?.content?.length ?? 0;
+        }
+      } catch {
+        // ignore fallback error
       }
 
       setAnalytics({
@@ -107,7 +105,7 @@ export default function AdminDashboardPage() {
     },
     {
       title: 'Total Revenue',
-      value: formatPrice(analytics.totalRevenue),
+      value: formatCurrency(analytics.totalRevenue),
       icon: DollarSign,
       link: '/admin/orders',
       color: 'bg-purple-50 text-purple-600 border-purple-200',
