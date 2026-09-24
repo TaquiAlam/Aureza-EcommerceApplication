@@ -3,7 +3,7 @@ import api from './axiosConfig';
 export const placeOrder = (paymentMethod, orderData) =>
   api.post(`/order/users/payments/${paymentMethod}`, orderData);
 
-export const getAllOrders = (pageNumber = 0, pageSize = 50, sortbyID = 'orderId', sortAS_DS = 'asc') =>
+export const getAllOrders = (pageNumber = 0, pageSize = 10, sortbyID = 'orderId', sortAS_DS = 'desc') =>
   api.get('/admin/orders', {
     params: { PageNumber: pageNumber, PageSize: pageSize, sortbyID, sortAS_DS }
   });

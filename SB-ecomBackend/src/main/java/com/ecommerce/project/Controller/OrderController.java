@@ -2,6 +2,7 @@ package com.ecommerce.project.Controller;
 
 import com.ecommerce.project.Payload.OrderRequestDTO;
 import com.ecommerce.project.Payload.OrderResponceDTO;
+import com.ecommerce.project.Payload.OrderStatusUpdateDto;
 import com.ecommerce.project.Payload.StripePaymentDto;
 import com.ecommerce.project.Service.OrderService;
 import com.ecommerce.project.Service.StripeService;
@@ -62,4 +63,10 @@ public class OrderController {
 
     }
 
+    @PutMapping("/admin/orders/{orderId}/status")
+    public ResponseEntity<OrderResponceDTO> updateOrderStatus(@PathVariable Long orderId,
+                                                              @RequestBody OrderStatusUpdateDto orderStatusUpdateDto) {
+        OrderResponceDTO order = orderService.updateOrder(orderId, orderStatusUpdateDto.getStatus());
+        return new ResponseEntity<OrderResponceDTO>(order, HttpStatus.OK);
+    }
 }

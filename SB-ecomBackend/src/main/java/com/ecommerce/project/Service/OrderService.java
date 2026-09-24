@@ -7,4 +7,6 @@ public interface OrderService {
     OrderResponceDTO placeOrder(String emailId, Long addressId, String paymentMethod, String pgName, String pgPaymentId, String pgStatus, String pgResponseMessage);
 
     adminOrderResponce getAllOrders(Integer pageNumber, Integer pageSize, String sortbyID, String sortASDs);
+
+    OrderResponceDTO updateOrder(Long orderId, String status);
 }

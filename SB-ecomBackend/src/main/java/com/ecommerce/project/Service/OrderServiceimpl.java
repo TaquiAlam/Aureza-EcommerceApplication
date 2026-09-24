@@ -197,4 +197,13 @@ public class OrderServiceimpl implements OrderService {
         orderResponse.setLastPage(pageOrders.isLast());
         return orderResponse;
     }
+
+    @Override
+    public OrderResponceDTO updateOrder(Long orderId, String status) {
+        Order order = orderRepo.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order", "orderId", orderId));
+        order.setOrderStatus(status);
+        orderRepo.save(order);
+        return modelMapper.map(order, OrderResponceDTO.class);
+    }
 }

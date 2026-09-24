@@ -1,51 +1,21 @@
 package com.ecommerce.project.Controller;
 
-import com.ecommerce.project.Model.AppRole;
-import com.ecommerce.project.Model.Role;
-import com.ecommerce.project.Model.User;
-import com.ecommerce.project.Payload.MessageResponce;
-import com.ecommerce.project.Payload.SignupRequest;
-import com.ecommerce.project.Payload.UserLoginRequest;
-import com.ecommerce.project.Payload.UserLoginResponse;
-import com.ecommerce.project.Repositories.RoleRepo;
-import com.ecommerce.project.Repositories.UserRepository;
-import com.ecommerce.project.security.Service.UserDetailsimpl;
-import com.ecommerce.project.security.jwt.JwtUtils;
+import com.ecommerce.project.Payload.*;
+import com.ecommerce.project.Service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.*;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
     @Autowired
-    private JwtUtils jwtUtils;
-
-    @Autowired
-    private AuthenticationManager authenticationManager;
-
-    @Autowired
-    UserRepository userRepository;
-
-    @Autowired
-    PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private RoleRepo roleRepo;
+    private AuthService authService;
 
     @PostMapping("/signin")
     public ResponseEntity<?> authenticateUser(@RequestBody UserLoginRequest loginRequest) {

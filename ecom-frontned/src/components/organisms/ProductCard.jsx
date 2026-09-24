@@ -1,4 +1,5 @@
-import { ShoppingCart, Star, Check } from 'lucide-react';
+import { ShoppingCart, Star, Check, Eye } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useCart } from '../../hooks/useCart';
 import { formatPrice, formatDiscount } from '../../utils/formatPrice';
 import { getProductImageUrl } from '../../utils/imageUtils';
@@ -25,8 +26,11 @@ export default function ProductCard({ product }) {
       className="creamy-card flex flex-col group relative overflow-hidden bg-white border border-[#E8E2D6] rounded-xl hover:shadow-lg transition-all duration-200" 
       id={`product-card-${product.productId}`}
     >
-      {/* Image Section */}
-      <div className="relative w-full pt-[75%] bg-[#F9F8F6] overflow-hidden rounded-t-xl border-b border-[#F0EBE1]">
+      {/* Image Section - Clickable Link */}
+      <Link 
+        to={`/products/${product.productId}`}
+        className="relative w-full pt-[75%] bg-[#F9F8F6] overflow-hidden rounded-t-xl border-b border-[#F0EBE1] block cursor-pointer"
+      >
         <img
           className="absolute inset-0 w-full h-full object-contain p-3 transition-transform duration-300 group-hover:scale-105"
           src={imageUrl}
@@ -51,7 +55,7 @@ export default function ProductCard({ product }) {
             </span>
           </div>
         )}
-      </div>
+      </Link>
 
       {/* Body Section */}
       <div className="p-4 flex flex-col gap-2 flex-1">
@@ -61,9 +65,11 @@ export default function ProductCard({ product }) {
           </span>
         )}
         
-        <h3 className="text-sm font-semibold text-[#0F1111] line-clamp-2 hover:text-[#C7511F] transition-colors leading-snug">
-          {product.productName}
-        </h3>
+        <Link to={`/products/${product.productId}`}>
+          <h3 className="text-sm font-semibold text-[#0F1111] line-clamp-2 hover:text-[#C7511F] transition-colors leading-snug cursor-pointer">
+            {product.productName}
+          </h3>
+        </Link>
 
         {/* Rating Stars Mock */}
         <div className="flex items-center gap-1.5 text-xs text-[#565959]">

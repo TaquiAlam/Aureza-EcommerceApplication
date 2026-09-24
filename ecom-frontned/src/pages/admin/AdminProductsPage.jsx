@@ -10,8 +10,14 @@ import {
   Search, 
   Package, 
   Filter,
-  ChevronLeft,
-  ChevronRight
+  Eye,
+  Upload,
+  CheckCircle2,
+  Star,
+  Check,
+  Truck,
+  RotateCcw,
+  ShieldCheck
 } from 'lucide-react';
 import { 
   getAllProducts, 
@@ -22,7 +28,7 @@ import {
   updateProductImage 
 } from '../../api/productApi';
 import { getAllCategories, parseCategoriesResponse } from '../../api/categoryApi';
-import { formatPrice } from '../../utils/formatPrice';
+import { formatPrice, formatDiscount } from '../../utils/formatPrice';
 import { getProductImageUrl } from '../../utils/imageUtils';
 import Pagination from '../../components/molecules/Pagination';
 import toast from 'react-hot-toast';
@@ -40,9 +46,15 @@ export default function AdminProductsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   
-  // Add / Edit form state
-  const [isAdding, setIsAdding] = useState(false);
-  const [editingProduct, setEditingProduct] = useState(null);
+  // Slide-over Drawer (Slider) state
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [drawerMode, setDrawerMode] = useState('view'); // 'view' | 'edit' | 'image' | 'add'
+  const [activeProduct, setActiveProduct] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isSubmittingForm, setIsSubmittingForm] = useState(false);
+
   const [formData, setFormData] = useState({
     productName: '',
     description: '',
@@ -107,26 +119,28 @@ export default function AdminProductsPage() {
   };
 
   const handleInputChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const resetForm = () => {
-    setIsAdding(false);
-    setEditingProduct(null);
-    setFormData({
-      productName: '',
-      description: '',
-      price: '',
-      specialPrice: '',
-      discount: 0,
-      quantity: '',
-      categoryId: ''
+    const { name, value } = e.target;
+    setFormData((prev) => {
+      const updated = { ...prev, [name]: value };
+      if (name === 'price' || name === 'discount') {
+        const p = parseFloat(name === 'price' ? value : prev.price) || 0;
+        const d = parseFloat(name === 'discount' ? value : prev.discount) || 0;
+        if (d > 0 && p > 0) {
+          updated.specialPrice = (p - (p * d) / 100).toFixed(2);
+        } else {
+          updated.specialPrice = p;
+        }
+      }
+      return updated;
     });
   };
 
-  const handleStartEdit = (product) => {
-    setEditingProduct(product);
-    setIsAdding(false);
+  // Open Drawer in View mode (Same Page preview)
+  const handleOpenView = (product) => {
+    setActiveProduct(product);
+    setDrawerMode('view');
+    setSelectedFile(null);
+    setImagePreviewUrl(null);
     setFormData({
       productName: product.productName || '',
       description: product.productDescription || product.description || '',
@@ -136,59 +150,154 @@ export default function AdminProductsPage() {
       quantity: product.quantity || '',
       categoryId: product.category?.categoryId || product.category?.categoryID || categories[0]?.categoryId || ''
     });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setIsDrawerOpen(true);
   };
 
-  const handleAddSubmit = async (e) => {
-    e.preventDefault();
-    if (!formData.categoryId) {
-      toast.error('Please select a category');
+  // Open Drawer in Add mode
+  const handleOpenAdd = () => {
+    setActiveProduct(null);
+    setDrawerMode('add');
+    setSelectedFile(null);
+    setImagePreviewUrl(null);
+    setFormData({
+      productName: '',
+      description: '',
+      price: '',
+      specialPrice: '',
+      discount: 0,
+      quantity: '',
+      categoryId: categories[0]?.categoryId || ''
+    });
+    setIsDrawerOpen(true);
+  };
+
+  // Open Drawer in Edit mode
+  const handleOpenEdit = (product) => {
+    setActiveProduct(product);
+    setDrawerMode('edit');
+    setSelectedFile(null);
+    setImagePreviewUrl(null);
+    setFormData({
+      productName: product.productName || '',
+      description: product.productDescription || product.description || '',
+      price: product.price || '',
+      specialPrice: product.specialPrice || '',
+      discount: product.discount || 0,
+      quantity: product.quantity || '',
+      categoryId: product.category?.categoryId || product.category?.categoryID || categories[0]?.categoryId || ''
+    });
+    setIsDrawerOpen(true);
+  };
+
+  // Open Drawer focused on Image upload
+  const handleOpenImage = (product) => {
+    setActiveProduct(product);
+    setDrawerMode('image');
+    setSelectedFile(null);
+    setImagePreviewUrl(null);
+    setFormData({
+      productName: product.productName || '',
+      description: product.productDescription || product.description || '',
+      price: product.price || '',
+      specialPrice: product.specialPrice || '',
+      discount: product.discount || 0,
+      quantity: product.quantity || '',
+      categoryId: product.category?.categoryId || product.category?.categoryID || categories[0]?.categoryId || ''
+    });
+    setIsDrawerOpen(true);
+  };
+
+  const handleCloseDrawer = () => {
+    setIsDrawerOpen(false);
+    setActiveProduct(null);
+    setSelectedFile(null);
+    setImagePreviewUrl(null);
+  };
+
+  // Handle local file selection with instant live preview
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      const preview = URL.createObjectURL(file);
+      setImagePreviewUrl(preview);
+    }
+  };
+
+  // Upload image to backend
+  const handleImageUploadSubmit = async () => {
+    if (!activeProduct || !selectedFile) {
+      toast.error('Please select an image file first');
       return;
     }
     try {
-      await addProduct(formData.categoryId, formData);
-      toast.success('Product created successfully');
-      resetForm();
+      setIsUploadingImage(true);
+      await updateProductImage(activeProduct.productId, selectedFile);
+      toast.success('Product image updated successfully!');
+      setSelectedFile(null);
+      setImagePreviewUrl(null);
       fetchProductList();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to create product');
+      toast.error(err.response?.data?.message || 'Failed to upload image');
+    } finally {
+      setIsUploadingImage(false);
     }
   };
 
-  const handleUpdateSubmit = async (e) => {
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
-    if (!editingProduct) return;
+    if (!formData.categoryId) {
+      toast.error('Please select a valid category');
+      return;
+    }
+
     try {
-      await updateProduct(editingProduct.productId, formData);
-      toast.success('Product updated successfully');
-      resetForm();
+      setIsSubmittingForm(true);
+      if (drawerMode === 'add') {
+        const res = await addProduct(formData.categoryId, formData);
+        const newProductId = res.data?.productId || res.data?.id;
+        
+        if (selectedFile && newProductId) {
+          try {
+            await updateProductImage(newProductId, selectedFile);
+          } catch {
+            // non-fatal
+          }
+        }
+        toast.success('Product created successfully');
+      } else {
+        await updateProduct(activeProduct.productId, formData);
+        
+        if (selectedFile) {
+          try {
+            await updateProductImage(activeProduct.productId, selectedFile);
+          } catch {
+            // non-fatal
+          }
+        }
+        toast.success('Product updated successfully');
+      }
+      handleCloseDrawer();
       fetchProductList();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to update product');
+      toast.error(err.response?.data?.message || 'Failed to save product');
+    } finally {
+      setIsSubmittingForm(false);
     }
   };
 
   const handleDelete = async (id, name) => {
-    if (window.confirm(`Are you sure you want to delete "${name}"?`)) {
+    if (window.confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
       try {
         await deleteProduct(id);
         toast.success('Product deleted successfully');
+        if (isDrawerOpen && activeProduct?.productId === id) {
+          handleCloseDrawer();
+        }
         fetchProductList();
       } catch (err) {
         toast.error(err.response?.data?.message || 'Failed to delete product');
       }
-    }
-  };
-
-  const handleImageUpload = async (productId, e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      await updateProductImage(productId, file);
-      toast.success('Product image updated successfully');
-      fetchProductList();
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to upload image');
     }
   };
 
@@ -209,145 +318,18 @@ export default function AdminProductsPage() {
             Products Management
           </h1>
           <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
-            Total {totalElements} items in store inventory. Manage prices, stock & media.
+            Total {totalElements} items in store inventory. Manage media, stock, and pricing.
           </p>
         </div>
 
         <button 
-          onClick={() => {
-            if (isAdding || editingProduct) {
-              resetForm();
-            } else {
-              setIsAdding(true);
-              setEditingProduct(null);
-            }
-          }}
+          onClick={handleOpenAdd}
           className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#FFD814] hover:bg-[#F7CA00] border border-[#FCD200] text-[#0F1111] font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer self-start sm:self-center"
         >
-          {isAdding || editingProduct ? <X size={16} /> : <Plus size={16} />}
-          <span>{isAdding || editingProduct ? 'Cancel' : 'Add New Product'}</span>
+          <Plus size={16} />
+          <span>Add New Product</span>
         </button>
       </div>
-
-      {/* Add or Edit Product Form */}
-      {(isAdding || editingProduct) && (
-        <form 
-          onSubmit={editingProduct ? handleUpdateSubmit : handleAddSubmit} 
-          className="bg-white border-2 border-[#FF9900]/40 p-6 rounded-2xl shadow-sm grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-3 duration-200"
-        >
-          <div className="md:col-span-2 pb-2 border-b border-[#F0EBE1] flex items-center justify-between">
-            <h3 className="text-sm font-bold text-[#0F1111] flex items-center gap-2">
-              <Package size={17} className="text-[#FF9900]" />
-              {editingProduct ? `Edit Product: ${editingProduct.productName}` : 'Add New Product'}
-            </h3>
-            <button type="button" onClick={resetForm} className="text-gray-400 hover:text-gray-600">
-              <X size={18} />
-            </button>
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="block text-xs font-bold text-gray-700 mb-1">Product Title *</label>
-            <input 
-              name="productName" 
-              value={formData.productName} 
-              onChange={handleInputChange} 
-              placeholder="e.g. Wireless Noise Cancelling Headphones"
-              className="w-full px-3.5 py-2.5 bg-[#FAF7F2] border border-[#E8E2D6] focus:border-[#FF9900] focus:bg-white rounded-xl text-xs font-semibold text-gray-900 outline-none transition-all" 
-              required 
-            />
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="block text-xs font-bold text-gray-700 mb-1">Description *</label>
-            <textarea 
-              name="description" 
-              value={formData.description} 
-              onChange={handleInputChange} 
-              rows="3" 
-              placeholder="Detailed description of product features..."
-              className="w-full px-3.5 py-2.5 bg-[#FAF7F2] border border-[#E8E2D6] focus:border-[#FF9900] focus:bg-white rounded-xl text-xs font-semibold text-gray-900 outline-none transition-all" 
-              required 
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">Regular Price (₹) *</label>
-            <input 
-              type="number" 
-              step="0.01"
-              name="price" 
-              value={formData.price} 
-              onChange={handleInputChange} 
-              placeholder="e.g. 1999"
-              className="w-full px-3.5 py-2.5 bg-[#FAF7F2] border border-[#E8E2D6] focus:border-[#FF9900] focus:bg-white rounded-xl text-xs font-semibold text-gray-900 outline-none transition-all" 
-              required 
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">Discount (%)</label>
-            <input 
-              type="number" 
-              name="discount" 
-              value={formData.discount} 
-              onChange={handleInputChange} 
-              placeholder="e.g. 10"
-              className="w-full px-3.5 py-2.5 bg-[#FAF7F2] border border-[#E8E2D6] focus:border-[#FF9900] focus:bg-white rounded-xl text-xs font-semibold text-gray-900 outline-none transition-all" 
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">Stock Quantity *</label>
-            <input 
-              type="number" 
-              name="quantity" 
-              value={formData.quantity} 
-              onChange={handleInputChange} 
-              placeholder="e.g. 50"
-              className="w-full px-3.5 py-2.5 bg-[#FAF7F2] border border-[#E8E2D6] focus:border-[#FF9900] focus:bg-white rounded-xl text-xs font-semibold text-gray-900 outline-none transition-all" 
-              required 
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">Category *</label>
-            <select 
-              name="categoryId" 
-              value={formData.categoryId} 
-              onChange={handleInputChange} 
-              className="w-full px-3.5 py-2.5 bg-[#FAF7F2] border border-[#E8E2D6] focus:border-[#FF9900] focus:bg-white rounded-xl text-xs font-semibold text-gray-900 outline-none transition-all" 
-              required
-            >
-              <option value="">Select Category</option>
-              {categories.map(c => (
-                <option key={c.categoryId} value={c.categoryId}>{c.categoryName}</option>
-              ))}
-            </select>
-            {categories.length === 0 && (
-              <p className="text-[11px] text-amber-600 mt-1 font-semibold">
-                ⚠️ No categories exist. Please create a category first in the Categories section.
-              </p>
-            )}
-          </div>
-
-          <div className="md:col-span-2 flex justify-end gap-2 pt-2 border-t border-[#F0EBE1]">
-            <button 
-              type="button" 
-              onClick={resetForm}
-              className="px-4 py-2 border border-[#E8E2D6] hover:bg-gray-100 text-gray-700 font-bold text-xs rounded-xl"
-            >
-              Cancel
-            </button>
-            <button 
-              type="submit" 
-              className="inline-flex items-center gap-2 px-5 py-2 bg-[#FFD814] hover:bg-[#F7CA00] border border-[#FCD200] text-[#0F1111] font-bold text-xs rounded-xl shadow-xs transition-all"
-            >
-              <Save size={16} /> 
-              <span>{editingProduct ? 'Update Product' : 'Save Product'}</span>
-            </button>
-          </div>
-        </form>
-      )}
 
       {/* Products Table Card */}
       <div className="bg-white border border-[#E8E2D6] rounded-2xl shadow-xs overflow-hidden">
@@ -366,7 +348,7 @@ export default function AdminProductsPage() {
             </div>
             <button
               type="submit"
-              className="px-3 py-2 bg-[#FF9900] hover:bg-[#FF8800] text-[#131921] font-bold text-xs rounded-xl shadow-xs shrink-0"
+              className="px-3 py-2 bg-[#FF9900] hover:bg-[#FF8800] text-[#131921] font-bold text-xs rounded-xl shadow-xs shrink-0 cursor-pointer"
             >
               Search
             </button>
@@ -399,8 +381,9 @@ export default function AdminProductsPage() {
                 }}
                 className="py-1.5 px-2 bg-white border border-[#E8E2D6] rounded-xl text-xs font-semibold text-gray-700 outline-none cursor-pointer"
               >
+                <option value={5}>5</option>
                 <option value={10}>10</option>
-                <option value={25}>25</option>
+                <option value={20}>20</option>
                 <option value={50}>50</option>
               </select>
             </div>
@@ -431,7 +414,7 @@ export default function AdminProductsPage() {
         {loading ? (
           <div className="h-64 flex flex-col items-center justify-center gap-2">
             <Loader2 className="w-8 h-8 text-[#FF9900] animate-spin" />
-            <p className="text-xs text-gray-500 font-medium">Loading Page {pageNumber + 1}...</p>
+            <p className="text-xs text-gray-500 font-medium">Loading Products...</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -449,8 +432,8 @@ export default function AdminProductsPage() {
                   <tr>
                     <td colSpan="4" className="py-12 text-center text-gray-500 text-xs">
                       <Package size={32} className="mx-auto text-gray-300 mb-2" />
-                      <p className="font-semibold text-gray-700">No products found on this page.</p>
-                      <p className="text-[11px] text-gray-400 mt-0.5">Try resetting search filters or click "Add New Product".</p>
+                      <p className="font-semibold text-gray-700">No products found.</p>
+                      <p className="text-[11px] text-gray-400 mt-0.5">Click "Add New Product" to create your first item.</p>
                     </td>
                   </tr>
                 ) : (
@@ -460,7 +443,11 @@ export default function AdminProductsPage() {
                       <tr key={product.productId} className="hover:bg-[#FAF7F2]/50 transition-colors">
                         <td className="py-3.5 px-4">
                           <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-xl bg-gray-100 border border-[#E8E2D6] overflow-hidden shrink-0 flex items-center justify-center">
+                            <button
+                              onClick={() => handleOpenView(product)}
+                              className="w-12 h-12 rounded-xl bg-gray-100 border border-[#E8E2D6] overflow-hidden shrink-0 flex items-center justify-center hover:opacity-80 transition-opacity cursor-pointer relative group"
+                              title="Click to preview product details on this page"
+                            >
                               {imgUrl ? (
                                 <img 
                                   src={imgUrl} 
@@ -475,11 +462,17 @@ export default function AdminProductsPage() {
                               ) : (
                                 <Package size={20} className="text-gray-400" />
                               )}
-                            </div>
+                              <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                <Eye size={14} className="text-white" />
+                              </div>
+                            </button>
                             <div className="max-w-xs">
-                              <p className="font-bold text-[#0F1111] text-xs leading-snug line-clamp-2">
+                              <button
+                                onClick={() => handleOpenView(product)}
+                                className="font-bold text-[#0F1111] text-xs leading-snug line-clamp-2 hover:text-[#FF9900] text-left transition-colors cursor-pointer"
+                              >
                                 {product.productName || 'Untitled Product'}
-                              </p>
+                              </button>
                               <p className="text-[10px] text-gray-500 line-clamp-1 mt-0.5">
                                 {product.productDescription || product.description || 'No description provided'}
                               </p>
@@ -514,25 +507,29 @@ export default function AdminProductsPage() {
 
                         <td className="py-3.5 px-4 text-center">
                           <div className="flex items-center justify-center gap-1.5">
-                            {/* Upload Image Button */}
-                            <label 
+                            {/* View Product Details in same page slider */}
+                            <button
+                              onClick={() => handleOpenView(product)}
+                              className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors inline-flex items-center cursor-pointer"
+                              title="View Product Details (Same Page)"
+                            >
+                              <Eye size={16} />
+                            </button>
+
+                            {/* Open Slider Image Mode */}
+                            <button 
+                              onClick={() => handleOpenImage(product)}
                               className="p-1.5 text-[#007185] hover:bg-[#007185]/10 rounded-lg cursor-pointer transition-colors" 
-                              title="Upload Product Image"
+                              title="Edit Image & Media"
                             >
                               <ImageIcon size={16} />
-                              <input 
-                                type="file" 
-                                accept="image/*"
-                                className="hidden" 
-                                onChange={(e) => handleImageUpload(product.productId, e)} 
-                              />
-                            </label>
+                            </button>
 
-                            {/* Edit Button */}
+                            {/* Open Slider Edit Mode */}
                             <button 
-                              onClick={() => handleStartEdit(product)}
-                              className="p-1.5 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors" 
-                              title="Edit Product"
+                              onClick={() => handleOpenEdit(product)}
+                              className="p-1.5 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer" 
+                              title="Edit Product Details"
                             >
                               <Edit2 size={16} />
                             </button>
@@ -540,7 +537,7 @@ export default function AdminProductsPage() {
                             {/* Delete Button */}
                             <button 
                               onClick={() => handleDelete(product.productId, product.productName)}
-                              className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors" 
+                              className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer" 
                               title="Delete Product"
                             >
                               <Trash2 size={16} />
@@ -560,7 +557,7 @@ export default function AdminProductsPage() {
         {totalPages > 1 && (
           <div className="p-4 border-t border-[#E8E2D6] bg-[#FAF7F2]/60 flex flex-col sm:flex-row items-center justify-between gap-3">
             <span className="text-xs text-gray-500">
-              Page <strong className="text-gray-900">{pageNumber + 1}</strong> of <strong className="text-gray-900">{totalPages}</strong>
+              Page <strong className="text-gray-900">{pageNumber + 1}</strong> of <strong className="text-gray-900">{totalPages}</strong> (Total {totalElements} products)
             </span>
 
             <Pagination
@@ -572,6 +569,409 @@ export default function AdminProductsPage() {
           </div>
         )}
       </div>
+
+      {/* ============================================================ */}
+      {/* 🚀 SLIDE-OVER DRAWER (SLIDER) FOR VIEW / EDIT / IMAGE / DELETE */}
+      {/* ============================================================ */}
+      {isDrawerOpen && (
+        <div className="fixed inset-0 z-50 overflow-hidden animate-fade-in">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
+            onClick={handleCloseDrawer}
+          />
+
+          <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
+            <div className="w-screen max-w-md sm:max-w-lg bg-white shadow-2xl border-l border-[#E8E2D6] flex flex-col justify-between animate-in slide-in-from-right duration-300">
+              
+              {/* Drawer Header */}
+              <div className="p-5 border-b border-[#E8E2D6] bg-[#FAF7F2] flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-[#FF9900]">
+                      {drawerMode === 'add' 
+                        ? 'New Product' 
+                        : drawerMode === 'view' 
+                        ? 'Product Overview' 
+                        : `Edit #${activeProduct?.productId}`}
+                    </span>
+                    {activeProduct && drawerMode !== 'view' && (
+                      <button
+                        type="button"
+                        onClick={() => setDrawerMode('view')}
+                        className="inline-flex items-center gap-1 text-[11px] font-bold text-[#007185] hover:underline cursor-pointer"
+                      >
+                        <Eye size={12} /> Switch to View Mode
+                      </button>
+                    )}
+                    {activeProduct && drawerMode === 'view' && (
+                      <button
+                        type="button"
+                        onClick={() => setDrawerMode('edit')}
+                        className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 hover:underline cursor-pointer"
+                      >
+                        <Edit2 size={12} /> Switch to Edit Mode
+                      </button>
+                    )}
+                  </div>
+                  <h2 className="text-lg font-black text-[#0F1111] truncate max-w-xs sm:max-w-sm mt-0.5">
+                    {drawerMode === 'add' 
+                      ? 'Add New Product' 
+                      : (activeProduct?.productName || 'Product Details')}
+                  </h2>
+                </div>
+
+                <button 
+                  onClick={handleCloseDrawer}
+                  className="p-2 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-200 transition-colors cursor-pointer"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Drawer Scrollable Content */}
+              <div className="p-6 overflow-y-auto space-y-6 flex-1">
+                
+                {/* 🌟 VIEW MODE (SAME PAGE PREVIEW) */}
+                {drawerMode === 'view' && activeProduct && (
+                  <div className="space-y-6 animate-fade-in">
+                    {/* Big Image Section */}
+                    <div className="relative w-full aspect-4/3 bg-[#FAF7F2] rounded-2xl border border-[#E8E2D6] overflow-hidden flex items-center justify-center p-4 shadow-inner">
+                      {activeProduct.image && activeProduct.image !== 'default.png' ? (
+                        <img 
+                          src={getProductImageUrl(activeProduct.image, activeProduct.productId)} 
+                          alt={activeProduct.productName} 
+                          className="max-h-full max-w-full object-contain" 
+                          onError={(e) => {
+                            e.target.src = `https://picsum.photos/seed/${activeProduct.productId}/500/500`;
+                          }}
+                        />
+                      ) : (
+                        <div className="text-center text-gray-400 space-y-1">
+                          <Package size={40} className="mx-auto text-gray-300" />
+                          <p className="text-xs font-medium">Default Catalog Image</p>
+                        </div>
+                      )}
+
+                      {activeProduct.discount > 0 && (
+                        <div className="absolute top-3 left-3 bg-[#CC0C39] text-white text-xs font-black px-2.5 py-0.5 rounded-lg shadow-sm">
+                          {formatDiscount(activeProduct.discount)}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Meta tags & Badges */}
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <span className="text-xs font-bold uppercase tracking-wider text-[#007185] bg-blue-50 border border-blue-100 px-2.5 py-0.5 rounded-full">
+                        {activeProduct.categoryName || 'General Category'}
+                      </span>
+
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${
+                        activeProduct.quantity > 5
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          : activeProduct.quantity > 0
+                          ? 'bg-amber-50 text-amber-700 border-amber-200'
+                          : 'bg-rose-50 text-rose-700 border-rose-200'
+                      }`}>
+                        {activeProduct.quantity > 0 ? `${activeProduct.quantity} in Stock` : 'Out of Stock'}
+                      </span>
+                    </div>
+
+                    {/* Title & Rating */}
+                    <div>
+                      <h3 className="text-xl font-black text-[#0F1111] leading-snug">
+                        {activeProduct.productName}
+                      </h3>
+                      <div className="flex items-center gap-1.5 text-xs text-[#FFA41C] mt-1.5">
+                        <div className="flex">
+                          <Star size={14} fill="#FFA41C" />
+                          <Star size={14} fill="#FFA41C" />
+                          <Star size={14} fill="#FFA41C" />
+                          <Star size={14} fill="#FFA41C" />
+                          <Star size={14} className="text-gray-300" />
+                        </div>
+                        <span className="font-bold text-[#007185] ml-1">4.5 / 5.0</span>
+                      </div>
+                    </div>
+
+                    {/* Price Card */}
+                    <div className="p-4 bg-[#FAF7F2] border border-[#E8E2D6] rounded-xl space-y-1">
+                      <div className="flex items-baseline gap-3">
+                        <span className="text-2xl font-black text-[#0F1111]">
+                          {formatPrice(activeProduct.specialPrice ?? activeProduct.price)}
+                        </span>
+                        {activeProduct.discount > 0 && (
+                          <span className="text-sm text-gray-400 line-through font-medium">
+                            {formatPrice(activeProduct.price)}
+                          </span>
+                        )}
+                        {activeProduct.discount > 0 && (
+                          <span className="text-xs font-bold text-[#CC0C39] bg-rose-50 border border-rose-200 px-2 py-0.5 rounded">
+                            Save {formatDiscount(activeProduct.discount)}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-gray-500">Live price reflected on storefront.</p>
+                    </div>
+
+                    {/* Description */}
+                    <div className="space-y-1.5">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-gray-700">Product Description</h4>
+                      <p className="text-xs text-gray-700 leading-relaxed bg-[#FAF7F2]/50 p-3.5 rounded-xl border border-[#F0EBE1] whitespace-pre-line">
+                        {activeProduct.productDescription || activeProduct.description || 'No detailed description available.'}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* 📝 EDIT / ADD / IMAGE FORM MODE */}
+                {drawerMode !== 'view' && (
+                  <div className="space-y-6">
+                    {/* 1. IMAGE PREVIEW & UPLOAD SECTION */}
+                    <div className="bg-[#FAF7F2] border border-[#E8E2D6] p-4 rounded-2xl space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold uppercase tracking-wider text-gray-700 flex items-center gap-1.5">
+                          <ImageIcon size={15} className="text-[#FF9900]" /> Product Media & Live Preview
+                        </span>
+                        {imagePreviewUrl && (
+                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                            <CheckCircle2 size={10} /> Live Preview Ready
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Image Display */}
+                      <div className="relative w-full h-48 bg-white border border-[#E8E2D6] rounded-xl overflow-hidden flex items-center justify-center p-3 shadow-inner">
+                        {imagePreviewUrl ? (
+                          <img 
+                            src={imagePreviewUrl} 
+                            alt="Local Preview" 
+                            className="max-h-full max-w-full object-contain" 
+                          />
+                        ) : activeProduct?.image && activeProduct.image !== 'default.png' ? (
+                          <img 
+                            src={getProductImageUrl(activeProduct.image, activeProduct.productId)} 
+                            alt={activeProduct.productName} 
+                            className="max-h-full max-w-full object-contain" 
+                            onError={(e) => {
+                              e.target.src = `https://picsum.photos/seed/${activeProduct.productId}/400/400`;
+                            }}
+                          />
+                        ) : (
+                          <div className="text-center text-gray-400 space-y-1">
+                            <Package size={36} className="mx-auto text-gray-300" />
+                            <p className="text-xs font-medium">No custom image uploaded yet</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* File Selector & Action */}
+                      <div className="space-y-2">
+                        <label className="block">
+                          <span className="sr-only">Choose Product Image</span>
+                          <input 
+                            type="file" 
+                            accept="image/*"
+                            onChange={handleFileChange}
+                            className="block w-full text-xs text-gray-500 file:mr-3 file:py-2 file:px-3.5 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#FFD814] file:text-[#0F1111] hover:file:bg-[#F7CA00] cursor-pointer"
+                          />
+                        </label>
+
+                        {selectedFile && activeProduct && (
+                          <div className="flex items-center justify-between pt-1">
+                            <span className="text-[11px] text-gray-500 truncate max-w-[200px]">
+                              {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
+                            </span>
+                            <button
+                              type="button"
+                              onClick={handleImageUploadSubmit}
+                              disabled={isUploadingImage}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#007185] hover:bg-[#005a6a] text-white font-bold text-xs rounded-xl shadow-xs transition-all disabled:opacity-50 cursor-pointer"
+                            >
+                              {isUploadingImage ? (
+                                <Loader2 size={13} className="animate-spin" />
+                              ) : (
+                                <Upload size={13} />
+                              )}
+                              <span>{isUploadingImage ? 'Uploading...' : 'Save Image Now'}</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* 2. PRODUCT DETAILS FORM */}
+                    <form id="drawer-product-form" onSubmit={handleFormSubmit} className="space-y-4">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Product Title *</label>
+                        <input 
+                          name="productName" 
+                          value={formData.productName} 
+                          onChange={handleInputChange} 
+                          placeholder="e.g. Sony WH-1000XM5 Wireless Headphones"
+                          className="w-full px-3.5 py-2.5 bg-[#FAF7F2] border border-[#E8E2D6] focus:border-[#FF9900] focus:bg-white rounded-xl text-xs font-semibold text-gray-900 outline-none transition-all" 
+                          required 
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Category *</label>
+                        <select 
+                          name="categoryId" 
+                          value={formData.categoryId} 
+                          onChange={handleInputChange} 
+                          className="w-full px-3.5 py-2.5 bg-[#FAF7F2] border border-[#E8E2D6] focus:border-[#FF9900] focus:bg-white rounded-xl text-xs font-semibold text-gray-900 outline-none transition-all cursor-pointer" 
+                          required
+                        >
+                          <option value="">Select Category</option>
+                          {categories.map(c => (
+                            <option key={c.categoryId} value={c.categoryId}>{c.categoryName}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-bold text-gray-700 mb-1">Regular Price (₹) *</label>
+                          <input 
+                            type="number" 
+                            step="0.01"
+                            name="price" 
+                            value={formData.price} 
+                            onChange={handleInputChange} 
+                            placeholder="e.g. 2499"
+                            className="w-full px-3.5 py-2.5 bg-[#FAF7F2] border border-[#E8E2D6] focus:border-[#FF9900] focus:bg-white rounded-xl text-xs font-semibold text-gray-900 outline-none transition-all" 
+                            required 
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-gray-700 mb-1">Discount (%)</label>
+                          <input 
+                            type="number" 
+                            name="discount" 
+                            value={formData.discount} 
+                            onChange={handleInputChange} 
+                            placeholder="e.g. 15"
+                            className="w-full px-3.5 py-2.5 bg-[#FAF7F2] border border-[#E8E2D6] focus:border-[#FF9900] focus:bg-white rounded-xl text-xs font-semibold text-gray-900 outline-none transition-all" 
+                          />
+                        </div>
+                      </div>
+
+                      {/* Live Special Price Preview */}
+                      {formData.price > 0 && formData.discount > 0 && (
+                        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs flex items-center justify-between text-emerald-800">
+                          <span className="font-semibold">Calculated Discounted Price:</span>
+                          <span className="font-black text-sm">
+                            {formatPrice(formData.specialPrice || (formData.price - (formData.price * formData.discount) / 100))}
+                          </span>
+                        </div>
+                      )}
+
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Stock Quantity *</label>
+                        <input 
+                          type="number" 
+                          name="quantity" 
+                          value={formData.quantity} 
+                          onChange={handleInputChange} 
+                          placeholder="e.g. 25"
+                          className="w-full px-3.5 py-2.5 bg-[#FAF7F2] border border-[#E8E2D6] focus:border-[#FF9900] focus:bg-white rounded-xl text-xs font-semibold text-gray-900 outline-none transition-all" 
+                          required 
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Description *</label>
+                        <textarea 
+                          name="description" 
+                          value={formData.description} 
+                          onChange={handleInputChange} 
+                          rows="4" 
+                          placeholder="Enter detailed features, specifications, and warranty info..."
+                          className="w-full px-3.5 py-2.5 bg-[#FAF7F2] border border-[#E8E2D6] focus:border-[#FF9900] focus:bg-white rounded-xl text-xs font-semibold text-gray-900 outline-none transition-all" 
+                          required 
+                        />
+                      </div>
+                    </form>
+                  </div>
+                )}
+              </div>
+
+              {/* Drawer Footer Actions */}
+              <div className="p-5 border-t border-[#E8E2D6] bg-[#FAF7F2] flex flex-col gap-2.5">
+                {drawerMode === 'view' ? (
+                  <div className="flex items-center gap-2">
+                    <button 
+                      type="button"
+                      onClick={() => handleDelete(activeProduct.productId, activeProduct.productName)}
+                      className="px-3.5 py-2.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 font-bold text-xs rounded-xl transition-all cursor-pointer inline-flex items-center gap-1.5"
+                      title="Delete Product"
+                    >
+                      <Trash2 size={15} />
+                      <span>Delete</span>
+                    </button>
+
+                    <button 
+                      type="button" 
+                      onClick={handleCloseDrawer}
+                      className="flex-1 py-2.5 border border-[#E8E2D6] hover:bg-gray-100 text-gray-700 font-bold text-xs rounded-xl transition-all text-center cursor-pointer"
+                    >
+                      Close
+                    </button>
+
+                    <button 
+                      type="button"
+                      onClick={() => setDrawerMode('edit')}
+                      className="flex-1 py-2.5 bg-[#FFD814] hover:bg-[#F7CA00] border border-[#FCD200] text-[#0F1111] font-bold text-xs rounded-xl shadow-xs transition-all inline-flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <Edit2 size={15} />
+                      <span>Edit Product</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    {activeProduct && (
+                      <button 
+                        type="button"
+                        onClick={() => handleDelete(activeProduct.productId, activeProduct.productName)}
+                        className="px-3.5 py-2.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 font-bold text-xs rounded-xl transition-all cursor-pointer inline-flex items-center gap-1.5"
+                        title="Delete Product"
+                      >
+                        <Trash2 size={15} />
+                        <span>Delete</span>
+                      </button>
+                    )}
+
+                    <button 
+                      type="button" 
+                      onClick={handleCloseDrawer}
+                      className="flex-1 py-2.5 border border-[#E8E2D6] hover:bg-gray-100 text-gray-700 font-bold text-xs rounded-xl transition-all text-center cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+
+                    <button 
+                      form="drawer-product-form"
+                      type="submit" 
+                      disabled={isSubmittingForm}
+                      className="flex-1 py-2.5 bg-[#FFD814] hover:bg-[#F7CA00] border border-[#FCD200] text-[#0F1111] font-bold text-xs rounded-xl shadow-xs transition-all inline-flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                    >
+                      {isSubmittingForm ? (
+                        <Loader2 size={16} className="animate-spin text-[#0F1111]" />
+                      ) : (
+                        <Save size={16} />
+                      )}
+                      <span>{drawerMode === 'add' ? 'Create Product' : 'Save Changes'}</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

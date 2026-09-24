@@ -95,7 +95,7 @@ public class securityConfig {
 
         http.authenticationProvider(authenticationProviderBean());
 
-        http.addFilterBefore(authJWTTokenFilterBean(), UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
