@@ -14,7 +14,7 @@ import {
   Share2,
   PackageCheck
 } from 'lucide-react';
-import { getAllProducts, parseProductsResponse } from '../api/productApi';
+import { getAllProducts, getProductById, normalizeProduct, parseProductsResponse } from '../api/productApi';
 import { useCart } from '../hooks/useCart';
 import { formatPrice, formatDiscount } from '../utils/formatPrice';
 import { getProductImageUrl } from '../utils/imageUtils';
@@ -38,26 +38,35 @@ export default function ProductDetailPage() {
   const fetchProductDetails = async () => {
     try {
       setLoading(true);
-      // Fetch products to locate the specific product by ID
-      const res = await getAllProducts(0, 50);
+      // 1. Try direct single-product fetch from backend
+      try {
+        const directRes = await getProductById(productId);
+        if (directRes.data && (directRes.data.productId || directRes.data.id || directRes.data.productName)) {
+          setProduct(normalizeProduct(directRes.data));
+          return;
+        }
+      } catch (err) {
+        // Fall back to listing search if direct endpoint not matched
+        console.debug('Direct fetch failed, falling back to product list', err);
+      }
+
+      // 2. Fallback: Search in product list
+      const res = await getAllProducts(0, 100);
       const parsed = parseProductsResponse(res.data);
       const found = parsed.content.find((p) => String(p.productId) === String(productId));
 
       if (found) {
         setProduct(found);
       } else {
-        // If not found in first batch, try larger fetch
-        const fullRes = await getAllProducts(0, 200);
+        // 3. Fallback: Search across larger list
+        const fullRes = await getAllProducts(0, 500);
         const fullParsed = parseProductsResponse(fullRes.data);
         const fullFound = fullParsed.content.find((p) => String(p.productId) === String(productId));
-        if (fullFound) {
-          setProduct(fullFound);
-        } else {
-          setProduct(null);
-        }
+        setProduct(fullFound || null);
       }
     } catch {
       toast.error('Failed to load product details');
+      setProduct(null);
     } finally {
       setLoading(false);
     }

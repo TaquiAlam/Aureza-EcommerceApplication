@@ -193,6 +193,13 @@ public class ProductServiceimpl implements ProductService {
     }
 
     @Override
+    public ProductRequestDTO getProductById(Long productId) {
+        Product product = productRepo.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product", "productId", productId));
+        return modelMapper.map(product, ProductRequestDTO.class);
+    }
+
+    @Override
      public ProductRequestDTO updateProduct(Long productId, ProductRequestDTO productRequestDTO){
         //retriving products from db
         Product productsfromDB=productRepo.findById(productId)

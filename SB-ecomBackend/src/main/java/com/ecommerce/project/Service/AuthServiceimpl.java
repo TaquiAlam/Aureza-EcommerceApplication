@@ -8,7 +8,10 @@ import com.ecommerce.project.Repositories.RoleRepo;
 import com.ecommerce.project.Repositories.UserRepository;
 import com.ecommerce.project.security.Service.UserDetailsimpl;
 import com.ecommerce.project.security.jwt.JwtUtils;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -41,6 +44,8 @@ public class AuthServiceimpl implements AuthService {
     @Autowired
     private RoleRepo roleRepo;
 
+    @Autowired
+    private ModelMapper modelMapper;
 
     @Override
     public AuthenticationResult login(UserLoginRequest loginRequest) {
@@ -94,13 +99,11 @@ public class AuthServiceimpl implements AuthService {
                         Role adminRole = roleRepo.findByRoleName(AppRole.ROLE_ADMIN)
                                 .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
                         roles.add(adminRole);
-
                         break;
                     case "seller":
                         Role modRole = roleRepo.findByRoleName(AppRole.ROLE_SELLER)
                                 .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
                         roles.add(modRole);
-
                         break;
                     default:
                         Role userRole = roleRepo.findByRoleName(AppRole.ROLE_USER)
@@ -135,5 +138,23 @@ public class AuthServiceimpl implements AuthService {
     @Override
     public ResponseCookie logoutUser() {
         return jwtUtils.getCleanJwtCookie();
+    }
+
+    @Override
+    public UserResponse getAllSellers(Pageable pageable) {
+        Page<User> allUsers = userRepository.findByRoleName(AppRole.ROLE_SELLER, pageable);
+        List<UserDTO> userDtos = allUsers.getContent()
+                .stream()
+                .map(p -> modelMapper.map(p, UserDTO.class))
+                .collect(Collectors.toList());
+
+        UserResponse response = new UserResponse();
+        response.setContent(userDtos);
+        response.setPageNumber(allUsers.getNumber());
+        response.setPageSize(allUsers.getSize());
+        response.setTotalElements(allUsers.getTotalElements());
+        response.setTotalPages(allUsers.getTotalPages());
+        response.setLastPage(allUsers.isLast());
+        return response;
     }
 }

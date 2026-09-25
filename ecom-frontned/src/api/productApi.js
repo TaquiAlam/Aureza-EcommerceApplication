@@ -1,5 +1,22 @@
 import api from './axiosConfig';
 
+export const normalizeProduct = (prod) => {
+  if (!prod) return null;
+  return {
+    ...prod,
+    productId: prod.productId ?? prod.id,
+    productName: prod.productName ?? prod.name ?? '',
+    description: prod.productDescription ?? prod.description ?? '',
+    productDescription: prod.productDescription ?? prod.description ?? '',
+    quantity: prod.quantity ?? prod.productQuantity ?? 0,
+    price: prod.price ?? 0,
+    specialPrice: prod.specialPrice ?? prod.price ?? 0,
+    discount: prod.discount ?? 0,
+    image: prod.image ?? 'default.png',
+    categoryName: prod.category?.categoryName ?? prod.categoryName ?? ''
+  };
+};
+
 export const getAllProducts = (
   pageNumber = 0,
   pageSize = 10,
@@ -39,22 +56,14 @@ export const getAllProducts = (
   return api.get('/public/products', { params });
 };
 
+export const getProductById = (productId) =>
+  api.get(`/public/products/${productId}`);
+
 export const parseProductsResponse = (resData) => {
   const root = resData || {};
   const rawList = root?.content || root?.Content || (Array.isArray(root) ? root : []);
   const normalizedList = Array.isArray(rawList)
-    ? rawList.map(prod => ({
-        ...prod,
-        productId: prod.productId ?? prod.id,
-        productName: prod.productName ?? prod.name ?? '',
-        description: prod.productDescription ?? prod.description ?? '',
-        productDescription: prod.productDescription ?? prod.description ?? '',
-        quantity: prod.quantity ?? prod.productQuantity ?? 0,
-        price: prod.price ?? 0,
-        specialPrice: prod.specialPrice ?? prod.price ?? 0,
-        discount: prod.discount ?? 0,
-        image: prod.image ?? 'default.png'
-      }))
+    ? rawList.map(prod => normalizeProduct(prod))
     : [];
 
   return {

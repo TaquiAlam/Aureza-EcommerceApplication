@@ -24,7 +24,14 @@ export default function AdminSellersPage() {
       setLoading(true);
       setIsApiPending(false);
       const res = await getAllSellers();
-      setSellers(res.data?.content || res.data || []);
+      const raw = res.data?.content || res.data?.users || (Array.isArray(res.data) ? res.data : []);
+      const normalized = raw.map(s => ({
+        ...s,
+        userId: s.userId ?? s.userid ?? s.id ?? '—',
+        username: s.username ?? s.userName ?? '—',
+        email: s.email ?? s.userEmail ?? s.useremail ?? '—'
+      }));
+      setSellers(normalized);
     } catch (err) {
       if (err.response?.status === 404) {
         setIsApiPending(true);

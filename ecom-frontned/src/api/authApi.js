@@ -15,10 +15,20 @@ export const getCurrentUser = () =>
 export const getCurrentUsername = () =>
   api.get('/auth/username');
 
-export const getAllSellers = (pageNumber = 0, pageSize = 50, sortBy = 'userId', sortOrder = 'asc') =>
-  api.get('/auth/sellers', {
-    params: { pageNumber, pageSize, sortBy, sortOrder }
-  });
+export const getAllSellers = async (pageNumber = 0, pageSize = 50, sortBy = 'userid', sortOrder = 'asc') => {
+  try {
+    return await api.get('/auth/admin/sellers', {
+      params: { pageNumber, pageSize, sortBy, sortOrder }
+    });
+  } catch (err) {
+    if (err.response?.status === 404) {
+      return await api.get('/auth/sellers', {
+        params: { pageNumber, pageSize, sortBy, sortOrder }
+      });
+    }
+    throw err;
+  }
+};
 
 export const addSeller = (username, email, password) =>
-  api.post('/auth/signup', { username, email, password, role: ['ROLE_SELLER'] });
+  api.post('/auth/signup', { username, email, password, role: ['seller'] });
