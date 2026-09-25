@@ -3,6 +3,7 @@ import { Analytics } from "@vercel/analytics/react"
 import MainLayout from './components/templates/MainLayout';
 import PrivateRoute from './components/templates/PrivateRoute';
 import AdminLayout from './components/templates/AdminLayout';
+import SellerLayout from './components/templates/SellerLayout';
 
 // Pages
 import HomePage from './pages/HomePage';
@@ -25,6 +26,10 @@ import AdminProductsPage from './pages/admin/AdminProductsPage';
 import AdminCategoriesPage from './pages/admin/AdminCategoriesPage';
 import AdminOrdersPage from './pages/admin/AdminOrdersPage';
 import AdminSellersPage from './pages/admin/AdminSellersPage';
+
+// Seller Pages
+import SellerProductsPage from './pages/seller/SellerProductsPage';
+import SellerOrdersPage from './pages/seller/SellerOrdersPage';
 
 export default function App() {
   return (
@@ -64,6 +69,15 @@ export default function App() {
             <Route path="categories" element={<AdminCategoriesPage />} />
             <Route path="orders" element={<AdminOrdersPage />} />
             <Route path="sellers" element={<AdminSellersPage />} />
+          </Route>
+        </Route>
+
+        {/* Protected Seller Routes with Seller Layout (Products & Orders only) */}
+        <Route element={<PrivateRoute sellerOnly />}>
+          <Route path="/seller" element={<SellerLayout />}>
+            <Route index element={<SellerProductsPage />} />
+            <Route path="products" element={<SellerProductsPage />} />
+            <Route path="orders" element={<SellerOrdersPage />} />
           </Route>
         </Route>
       </Routes>

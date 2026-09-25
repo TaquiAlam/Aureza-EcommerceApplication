@@ -3,8 +3,8 @@ import api from './axiosConfig';
 export const signin = (username, password) =>
   api.post('/auth/signin', { username, password });
 
-export const signup = (username, email, password) =>
-  api.post('/auth/signup', { username, email, password });
+export const signup = (username, email, password, role = ['user']) =>
+  api.post('/auth/signup', { username, email, password, role: Array.isArray(role) ? role : [role] });
 
 export const signout = () =>
   api.post('/auth/signout');

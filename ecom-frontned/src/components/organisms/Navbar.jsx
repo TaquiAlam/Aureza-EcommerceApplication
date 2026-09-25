@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ShoppingCart, User, LogOut, Menu, X, Search, MapPin, ChevronDown, LayoutDashboard, Sparkles } from 'lucide-react';
+import { ShoppingCart, User, LogOut, Menu, X, Search, MapPin, ChevronDown, LayoutDashboard, Sparkles, Store } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useCart } from '../../hooks/useCart';
 import { getAllCategories, parseCategoriesResponse } from '../../api/categoryApi';
@@ -240,8 +240,13 @@ export default function Navbar() {
                         <Link to="/cart" className="py-1.5 px-2 rounded hover:bg-gray-100 hover:text-[#007185] transition-colors">
                           Your Cart ({cartItemCount})
                         </Link>
+                        {(user?.roles?.includes('ROLE_SELLER') || user?.roles?.includes('ROLE_ADMIN')) && (
+                          <Link to="/seller/products" className="py-1.5 px-2 rounded hover:bg-amber-50 hover:text-[#FF9900] flex items-center gap-1.5 text-amber-800 font-semibold transition-colors">
+                            <Store size={14} className="text-[#FF9900]" /> Seller Portal
+                          </Link>
+                        )}
                         {user?.roles?.includes('ROLE_ADMIN') && (
-                          <Link to="/admin" className="py-1.5 px-2 rounded hover:bg-gray-100 hover:text-[#007185] flex items-center gap-1.5 text-indigo-700 font-semibold">
+                          <Link to="/admin" className="py-1.5 px-2 rounded hover:bg-indigo-50 hover:text-indigo-700 flex items-center gap-1.5 text-indigo-700 font-semibold transition-colors">
                             <LayoutDashboard size={14} /> Admin Dashboard
                           </Link>
                         )}
@@ -385,6 +390,12 @@ export default function Navbar() {
           <Link to="/contact" className="py-1 px-2 rounded hover:outline hover:outline-1 hover:outline-white shrink-0 text-gray-200 hover:text-white font-medium">
             Contact Us
           </Link>
+          <Link 
+            to={user?.roles?.includes('ROLE_SELLER') || user?.roles?.includes('ROLE_ADMIN') ? "/seller/products" : "/signup"} 
+            className="py-1 px-2 rounded hover:outline hover:outline-1 hover:outline-white shrink-0 text-[#FEB800] hover:text-[#FF9900] font-bold flex items-center gap-1"
+          >
+            <Store size={13} /> {user?.roles?.includes('ROLE_SELLER') || user?.roles?.includes('ROLE_ADMIN') ? 'Seller Portal' : 'Sell on Aureza'}
+          </Link>
           <div className="ml-auto hidden lg:flex items-center gap-1 text-[#FEB800] py-1 px-2 shrink-0">
             <Sparkles size={14} />
             <span className="font-semibold text-[11px] text-white">Join Prime for Free Fast Delivery</span>
@@ -401,6 +412,11 @@ export default function Navbar() {
           {user && (
             <Link to="/profile" className="py-2 border-b border-gray-700 flex items-center gap-2 text-[#FEB800] font-semibold">
               <User size={15} /> Your Profile & Photo
+            </Link>
+          )}
+          {(user?.roles?.includes('ROLE_SELLER') || user?.roles?.includes('ROLE_ADMIN')) && (
+            <Link to="/seller/products" className="py-2 border-b border-gray-700 flex items-center gap-2 text-[#FEB800] font-bold">
+              <Store size={15} /> Seller Portal
             </Link>
           )}
           <Link to="/about" className="py-2 border-b border-gray-700">About</Link>

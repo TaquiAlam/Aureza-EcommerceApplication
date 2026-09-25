@@ -70,9 +70,14 @@ export function AuthProvider({ children }) {
     return res.data;
   };
 
-  const register = async (username, email, password) => {
-    await signupApi(username, email, password);
-    toast.success('Account created! Please sign in.');
+  const register = async (username, email, password, role = 'user') => {
+    const roles = Array.isArray(role) ? role : [role];
+    await signupApi(username, email, password, roles);
+    if (roles.includes('seller') || roles.includes('ROLE_SELLER')) {
+      toast.success('Seller Partner account created! Please sign in to access your Seller Portal.');
+    } else {
+      toast.success('Account created! Please sign in.');
+    }
   };
 
   const logout = async () => {

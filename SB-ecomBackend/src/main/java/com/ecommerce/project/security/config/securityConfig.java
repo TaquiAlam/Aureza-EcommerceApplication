@@ -90,6 +90,8 @@ public class securityConfig {
                                 .requestMatchers("/api/test/**").permitAll()
                                 .requestMatchers("/images/**", "/api/images/**").permitAll()
                                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                                .requestMatchers("/api/seller/**").hasAnyRole("ADMIN", "SELLER")
+                                .requestMatchers("/api/admin/**").hasRole("ADMIN")
                                 .anyRequest().authenticated()
                 );
 

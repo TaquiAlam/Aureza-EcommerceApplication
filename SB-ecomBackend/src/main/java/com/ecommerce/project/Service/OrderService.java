@@ -8,5 +8,7 @@ public interface OrderService {
 
     adminOrderResponce getAllOrders(Integer pageNumber, Integer pageSize, String sortbyID, String sortASDs);
 
+    adminOrderResponce getAllSellerOrders(Integer pageNumber, Integer pageSize, String sortbyID, String sortASDs);
+
     OrderResponceDTO updateOrder(Long orderId, String status);
 }

@@ -65,7 +65,18 @@ public class OrderController {
 
     }
 
-    @PutMapping("/admin/orders/{orderId}/status")
+    @GetMapping("/seller/orders")
+    public ResponseEntity<adminOrderResponce> getAllSellerOrders(
+            @RequestParam(name = "PageNumber", defaultValue = AppConst.Page_Number, required = false) Integer PageNumber,
+            @RequestParam(name = "PageSize", defaultValue = AppConst.Page_Size, required = false) Integer PageSize,
+            @RequestParam(name = "sortbyID", defaultValue = AppConst.SORT_ORDERS_BY, required = false) String sortbyID,
+            @RequestParam(name = "sortAS_DS", defaultValue = AppConst.SortBY, required = false) String sortAS_DS
+    ) {
+        adminOrderResponce orderResponse = orderService.getAllSellerOrders(PageNumber, PageSize, sortbyID, sortAS_DS);
+        return new ResponseEntity<adminOrderResponce>(orderResponse, HttpStatus.OK);
+    }
+
+    @PutMapping({"/admin/orders/{orderId}/status", "/seller/orders/{orderId}/status"})
     public ResponseEntity<OrderResponceDTO> updateOrderStatus(@PathVariable Long orderId,
                                                               @RequestBody OrderStatusUpdateDto orderStatusUpdateDto) {
         OrderResponceDTO order = orderService.updateOrder(orderId, orderStatusUpdateDto.getStatus());

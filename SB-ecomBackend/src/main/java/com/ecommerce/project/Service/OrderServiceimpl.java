@@ -53,6 +53,9 @@ public class OrderServiceimpl implements OrderService {
     @Autowired
     private ModelMapper modelMapper;
 
+    @Autowired
+    private com.ecommerce.project.utils.AuthUtils authUtils;
+
 
     @Override
     @Transactional
@@ -165,6 +168,7 @@ public class OrderServiceimpl implements OrderService {
 
             // Save product back to the database
             productRepo.save(product);
+        
 
             // Remove items from cart
             cartService.deleteProductFromCart(cart.getCartId(), item.getProduct().getProductId());
@@ -182,7 +186,7 @@ public class OrderServiceimpl implements OrderService {
         return orderDTO;
     }
 
-     @Override
+    @Override
     public adminOrderResponce getAllOrders(Integer pageNumber, Integer pageSize, String sortbyID, String sortASDs) {
         Sort sortByAndOrder = sortASDs.equalsIgnoreCase("asc")
                 ? Sort.by(sortbyID).ascending()
@@ -193,6 +197,44 @@ public class OrderServiceimpl implements OrderService {
         List<OrderResponceDTO> orderDTOs = orders.stream()
                 .map(order -> modelMapper.map(order, OrderResponceDTO.class))
                 .toList();
+        adminOrderResponce orderResponse = new adminOrderResponce();
+        orderResponse.setContents(orderDTOs);
+        orderResponse.setPageNumber(pageOrders.getNumber());
+        orderResponse.setPageSize(pageOrders.getSize());
+        orderResponse.setTotalElements(pageOrders.getTotalElements());
+        orderResponse.setTotalPages(pageOrders.getTotalPages());
+        orderResponse.setLastPage(pageOrders.isLast());
+        return orderResponse;
+    }
+
+    @Override
+    public adminOrderResponce getAllSellerOrders(Integer pageNumber, Integer pageSize, String sortbyID, String sortASDs) {
+        Sort sortByAndOrder = sortASDs.equalsIgnoreCase("asc")
+                ? Sort.by(sortbyID).ascending()
+                : Sort.by(sortbyID).descending();
+        Pageable pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
+
+        com.ecommerce.project.Model.User seller = authUtils.loggedInUser();
+
+        Page<Order> pageOrders = orderRepo.findOrdersBySellerId(seller.getUserid(), pageDetails);
+
+        List<OrderResponceDTO> orderDTOs = pageOrders.getContent().stream()
+                .map(order -> {
+                    OrderResponceDTO dto = modelMapper.map(order, OrderResponceDTO.class);
+                    if (order.getOrderItems() != null) {
+                        List<OrderItemDTO> sellerItems = order.getOrderItems().stream()
+                                .filter(oi -> oi.getProduct() != null && oi.getProduct().getUser() != null && oi.getProduct().getUser().getUserid().equals(seller.getUserid()))
+                                .map(item -> modelMapper.map(item, OrderItemDTO.class))
+                                .toList();
+                        dto.setOrderItems(sellerItems);
+                    }
+                    if (order.getAddress() != null) {
+                        dto.setAddressId(order.getAddress().getAddressId());
+                    }
+                    return dto;
+                })
+                .toList();
+
         adminOrderResponce orderResponse = new adminOrderResponce();
         orderResponse.setContents(orderDTOs);
         orderResponse.setPageNumber(pageOrders.getNumber());

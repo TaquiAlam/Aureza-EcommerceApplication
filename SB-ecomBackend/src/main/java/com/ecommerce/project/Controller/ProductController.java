@@ -22,7 +22,7 @@ public class ProductController {
     @Autowired
     private ProductService productService;
 
-    @PostMapping("/admin/categories/{categoryID}/product")
+    @PostMapping({"/admin/categories/{categoryID}/product", "/seller/categories/{categoryID}/product"})
     public ResponseEntity<ProductRequestDTO> addProduct(@PathVariable Long categoryID,
                                                         @RequestBody ProductRequestDTO productRequestDTO) {
              ProductRequestDTO SavedproductRequestDTO=productService.addProduct(categoryID,productRequestDTO);
@@ -41,6 +41,20 @@ public class ProductController {
             @RequestParam(name = "sortOrder", defaultValue = AppConst.SortBY, required = false) String sortOrder)
     {
         ProductResponceDTO productResponceDTO=productService.getProducts(pageNumber,pageSize,sortBy,sortOrder,keyword,category);
+
+        return new ResponseEntity<>(productResponceDTO,HttpStatus.OK);
+    }
+
+    @GetMapping("/seller/products")
+    public ResponseEntity<ProductResponceDTO> getAllProductsSeller(
+            @RequestParam(name = "keyword", required = false) String keyword,
+            @RequestParam(name = "category", required = false) String category,
+            @RequestParam(name = "pageNumber", defaultValue = AppConst.Page_Number, required = false) Integer pageNumber,
+            @RequestParam(name = "pageSize", defaultValue = AppConst.Page_Size, required = false) Integer pageSize,
+            @RequestParam(name = "sortBy", defaultValue = AppConst.SORT_PRODUCTS_BY, required = false) String sortBy,
+            @RequestParam(name = "sortOrder", defaultValue = AppConst.SortBY, required = false) String sortOrder)
+    {
+        ProductResponceDTO productResponceDTO=productService.getProductsSeller(pageNumber,pageSize,sortBy,sortOrder,keyword,category);
 
         return new ResponseEntity<>(productResponceDTO,HttpStatus.OK);
     }
@@ -71,19 +85,19 @@ public class ProductController {
         return new ResponseEntity<>(productDTO, HttpStatus.OK);
     }
 
-    @PutMapping("/admin/products/{product_Id}")
+    @PutMapping({"/admin/products/{product_Id}", "/seller/products/{product_Id}"})
     public ResponseEntity<ProductRequestDTO> updateProducts(@PathVariable Long product_Id, @RequestBody ProductRequestDTO productRequestDTO) {
         ProductRequestDTO updatedproductRequestDTO=productService.updateProduct(product_Id,productRequestDTO);
         return new ResponseEntity<>(updatedproductRequestDTO,HttpStatus.OK);
     }
 
-    @DeleteMapping("/admin/products/{product_Id}")
+    @DeleteMapping({"/admin/products/{product_Id}", "/seller/products/{product_Id}"})
     public ResponseEntity<ProductRequestDTO> deleteProduct(@PathVariable Long product_Id) {
         ProductRequestDTO productRequestDTO=productService.deleteproduct(product_Id);
         return new ResponseEntity<>(productRequestDTO,HttpStatus.OK);
     }
 
-    @PutMapping({"/products/{productId}/image", "/admin/products/{productId}/image"})
+    @PutMapping({"/products/{productId}/image", "/admin/products/{productId}/image", "/seller/products/{productId}/image"})
     public ResponseEntity<ProductRequestDTO> updateProductImage(@PathVariable Long productId,
                                                          @RequestParam("image") MultipartFile image) throws IOException {
         ProductRequestDTO updatedProduct = productService.updateProductImage(productId, image);

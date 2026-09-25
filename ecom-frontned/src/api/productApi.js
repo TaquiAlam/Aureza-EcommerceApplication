@@ -114,3 +114,89 @@ export const updateProductImage = (productId, imageFile) => {
     headers: { 'Content-Type': 'multipart/form-data' }
   });
 };
+
+// ==========================================
+// 🚀 DEDICATED SELLER PANEL PRODUCT APIs
+// ==========================================
+export const getSellerProducts = (
+  pageNumber = 0,
+  pageSize = 10,
+  sortBy = 'productId',
+  sortOrder = 'asc',
+  keyword = '',
+  category = ''
+) => {
+  if (typeof pageNumber === 'object' && pageNumber !== null) {
+    const opts = pageNumber;
+    const pNum = opts.pageNumber ?? 0;
+    const pSize = opts.pageSize ?? 10;
+    const params = {
+      pageNumber: pNum,
+      pageSize: pSize,
+      PageNumber: pNum,
+      PageSize: pSize,
+      sortBy: opts.sortBy ?? 'productId',
+      sortOrder: opts.sortOrder ?? 'asc',
+    };
+    if (opts.keyword && String(opts.keyword).trim()) params.keyword = String(opts.keyword).trim();
+    if (opts.category && opts.category !== 'All') params.category = opts.category;
+    return api.get('/seller/products', { params });
+  }
+
+  const params = { 
+    pageNumber, 
+    pageSize, 
+    PageNumber: pageNumber,
+    PageSize: pageSize,
+    sortBy, 
+    sortOrder 
+  };
+  if (keyword && String(keyword).trim()) params.keyword = String(keyword).trim();
+  if (category && category !== 'All') params.category = category;
+
+  return api.get('/seller/products', { params });
+};
+
+export const addSellerProduct = (categoryId, productData) => {
+  const desc = (productData.productDescription || productData.description || 'Quality product from Aureza').trim();
+  const payload = {
+    ...productData,
+    productName: (productData.productName || '').trim(),
+    productDescription: desc.length >= 6 ? desc : desc + ' quality item',
+    description: desc.length >= 6 ? desc : desc + ' quality item',
+    price: Number(productData.price || 0),
+    discount: Number(productData.discount || 0),
+    specialPrice: Number(productData.specialPrice || productData.price || 0),
+    quantity: Number(productData.quantity || productData.productQuantity || 0),
+    productQuantity: Number(productData.quantity || productData.productQuantity || 0)
+  };
+  return api.post(`/seller/categories/${categoryId}/product`, payload);
+};
+
+export const updateSellerProduct = (productId, productData) => {
+  const desc = (productData.productDescription || productData.description || 'Quality product from Aureza').trim();
+  const payload = {
+    ...productData,
+    productName: (productData.productName || '').trim(),
+    productDescription: desc.length >= 6 ? desc : desc + ' quality item',
+    description: desc.length >= 6 ? desc : desc + ' quality item',
+    price: Number(productData.price || 0),
+    discount: Number(productData.discount || 0),
+    specialPrice: Number(productData.specialPrice || productData.price || 0),
+    quantity: Number(productData.quantity || productData.productQuantity || 0),
+    productQuantity: Number(productData.quantity || productData.productQuantity || 0)
+  };
+  return api.put(`/seller/products/${productId}`, payload);
+};
+
+export const deleteSellerProduct = (productId) =>
+  api.delete(`/seller/products/${productId}`);
+
+export const updateSellerProductImage = (productId, imageFile) => {
+  const formData = new FormData();
+  formData.append('image', imageFile);
+  return api.put(`/seller/products/${productId}/image`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+};
+

@@ -53,6 +53,9 @@ public class ProductServiceimpl implements ProductService {
     @Autowired
     private ModelMapper modelMapper;
 
+    @Autowired
+    private com.ecommerce.project.utils.AuthUtils authUtils;
+
     @Value("${project.file}")
     private String path;
 
@@ -77,6 +80,11 @@ public class ProductServiceimpl implements ProductService {
             Product product = modelMapper.map(productRequestDTO, Product.class);
             product.setImage("default.png");
             product.setCategory(categoryModel);
+            try {
+                product.setUser(authUtils.loggedInUser());
+            } catch (Exception e) {
+                // User may not be logged in or test context
+            }
             if (product.getProductDescription() == null || product.getProductDescription().trim().length() < 6) {
                 product.setProductDescription(productRequestDTO.getProductDescription() != null && productRequestDTO.getProductDescription().trim().length() >= 6
                         ? productRequestDTO.getProductDescription()
@@ -205,20 +213,28 @@ public class ProductServiceimpl implements ProductService {
         Product productsfromDB=productRepo.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "product_Id",productId));
 
-        //Update the Products to the updated data
-        Product product = modelMapper.map(productRequestDTO, Product.class);
-        productsfromDB.setProductName(product.getProductName());
-        productsfromDB.setPrice(product.getPrice());
-        productsfromDB.setProductDescription(product.getProductDescription());
-        productsfromDB.setQuantity(product.getQuantity());
-        productsfromDB.setDiscount(product.getDiscount());
+        // Update the Products to the updated data
+        if (productRequestDTO.getProductName() != null && !productRequestDTO.getProductName().isBlank()) {
+            productsfromDB.setProductName(productRequestDTO.getProductName().trim());
+        }
+        if (productRequestDTO.getPrice() > 0) {
+            productsfromDB.setPrice(productRequestDTO.getPrice());
+        }
+        if (productRequestDTO.getProductDescription() != null && productRequestDTO.getProductDescription().trim().length() >= 6) {
+            productsfromDB.setProductDescription(productRequestDTO.getProductDescription().trim());
+        } else if (productsfromDB.getProductDescription() == null || productsfromDB.getProductDescription().trim().length() < 6) {
+            productsfromDB.setProductDescription("Quality product from Aureza store");
+        }
+        if (productRequestDTO.getQuantity() != null) {
+            productsfromDB.setQuantity(productRequestDTO.getQuantity());
+        }
+        productsfromDB.setDiscount(productRequestDTO.getDiscount());
         double specialPrice = productsfromDB.getPrice() -
                 ((productsfromDB.getDiscount() * 0.01) * productsfromDB.getPrice());
         productsfromDB.setSpecialPrice(specialPrice);
-        productsfromDB.setSpecialPrice(specialPrice);
 
-        //save to database
-        Product product1=productRepo.save(productsfromDB);
+        // Save to database
+        Product product1 = productRepo.save(productsfromDB);
 
         //Dekho bhai hmne cart banaya usme products ko add kiya but what happend ki product update ya delete ho jae
         //to cart ko bhi updated result deikhana hoga...
@@ -280,6 +296,30 @@ public class ProductServiceimpl implements ProductService {
 
         // return DTO after mapping product to DTO
         return modelMapper.map(updatedProduct, ProductRequestDTO.class);
+    }
+
+    @Override
+    public ProductResponceDTO getProductsSeller(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder, String keyword, String category) {
+        Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc")
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+
+        Pageable pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
+        com.ecommerce.project.Model.User user = authUtils.loggedInUser();
+
+        Page<Product> products = productRepo.findByUser(user, pageDetails);
+        List<ProductRequestDTO> productsDTO = products.stream()
+                .map(product -> modelMapper.map(product, ProductRequestDTO.class)).toList();
+
+        ProductResponceDTO productResponceDTO = new ProductResponceDTO();
+        productResponceDTO.setContent(productsDTO);
+        productResponceDTO.setPage_Number(products.getNumber());
+        productResponceDTO.setPage_Size(products.getSize());
+        productResponceDTO.setTotalElements(products.getTotalElements());
+        productResponceDTO.setTotalPages(products.getTotalPages());
+        productResponceDTO.setLastPage(products.isLast());
+
+        return productResponceDTO;
     }
 
 }
