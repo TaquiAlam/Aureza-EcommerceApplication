@@ -16,7 +16,7 @@
 
 **A modern, enterprise-grade multi-role E-Commerce ecosystem built with Spring Boot 4 (Java 21), React 19, Tailwind CSS v4, PostgreSQL, Stripe payments, and JWT-secured Role-Based Access Control (RBAC).**
 
-[Live Application Demo](https://aureza-store.vercel.app) • [Backend API Docs (Swagger)](https://aureza-backend.onrender.com/swagger-ui.html) • [End-to-End Documentation](./DOCUMENTATION.md) • [Report Bug](https://github.com/TaquiAlam/Aureza-EcommerceApplication/issues)
+[Live Application Demo](https://aureza-orcin.vercel.app/) • [End-to-End Documentation](./DOCUMENTATION.md) • [Report Bug](https://github.com/TaquiAlam/Aureza-EcommerceApplication/issues)
 
 </div>
 
@@ -541,7 +541,6 @@ CREATE DATABASE ecommerce;
    ./mvnw spring-boot:run
    ```
    *The backend will boot up at `http://localhost:8080` with automatic role and product seeding.*
-   *Swagger API Documentation will be available at `http://localhost:8080/swagger-ui.html`.*
 
 ---
 
